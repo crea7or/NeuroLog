@@ -1,0 +1,108 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="System Logic Classes">
+      <UniqueIdentifier>{90e50cd1-5cc8-41b8-9f32-fa0377f46b7f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="App Logic Classes">
+      <UniqueIdentifier>{fabeb525-4f17-40f4-ba49-072db9fb6a66}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="stdafx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="targetver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="NeuroLog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="NeuroLogDlg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="HighPrefTimer.h">
+      <Filter>System Logic Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="AppLog.h">
+      <Filter>App Logic Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="Core.h">
+      <Filter>App Logic Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="Subnet.h">
+      <Filter>App Logic Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="Registry.h">
+      <Filter>System Logic Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="RawSubnet.h">
+      <Filter>App Logic Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="Hit.h">
+      <Filter>App Logic Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="BitDateTime.h">
+      <Filter>System Logic Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="SubnetHit.h">
+      <Filter>App Logic Classes</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NeuroLog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NeuroLogDlg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="HighPrefTimer.cpp">
+      <Filter>System Logic Classes</Filter>
+    </ClCompile>
+    <ClCompile Include="Core.cpp">
+      <Filter>App Logic Classes</Filter>
+    </ClCompile>
+    <ClCompile Include="AppLog.cpp">
+      <Filter>App Logic Classes</Filter>
+    </ClCompile>
+    <ClCompile Include="Registry.cpp">
+      <Filter>System Logic Classes</Filter>
+    </ClCompile>
+    <ClCompile Include="Hit.cpp">
+      <Filter>App Logic Classes</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="res\NeuroLog.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="NeuroLog.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="res\NeuroLog.rc2">
+      <Filter>Resource Files</Filter>
+    </None>
+  </ItemGroup>
+</Project>
