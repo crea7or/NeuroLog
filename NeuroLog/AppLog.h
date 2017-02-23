@@ -8,10 +8,8 @@ public:
 	AppLog();
 	~AppLog();
 
-	void Add(CString message);
-
+	void Add( std::wstring message );
 
 	CListBox* listBoxCtrl;
-	CStringArray appLog;
 };
 

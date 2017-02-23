@@ -184,6 +184,7 @@
   <ItemGroup>
     <ClInclude Include="AppLog.h" />
     <ClInclude Include="BitDateTime.h" />
+    <ClInclude Include="ChronoTimer.h" />
     <ClInclude Include="RawSubnet.h" />
     <ClInclude Include="Registry.h" />
     <ClInclude Include="Core.h" />
@@ -196,9 +197,11 @@
     <ClInclude Include="Subnet.h" />
     <ClInclude Include="SubnetHit.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="Types.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AppLog.cpp" />
+    <ClCompile Include="ChronoTimer.cpp" />
     <ClCompile Include="Registry.cpp" />
     <ClCompile Include="Core.cpp" />
     <ClCompile Include="HighPrefTimer.cpp" />

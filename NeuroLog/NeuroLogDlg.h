@@ -23,6 +23,7 @@ public:
 protected:
 	HICON m_hIcon;
 
+	LPSTR UNICODEtoASCII( CString* pUnicodeSrt );
 	BOOL PickTheFolder( CWnd* lp_mfcWnd, CString *lp_csFolder );
 	void SaveToRegsitry();
 
@@ -38,14 +39,14 @@ public:
 
 	CListBox logListBoxCtrl;
 
-	DWORD hitsLimit;
-	DWORD sizeLimit;
+	uint32 hitsLimit;
+	uint32 sizeLimit;
 
 	CString logsMask;
 	CString subnetsDbFolder;
 	CString logsFolder;
-	CString cacheFolder;
+	CString outputFolder;
 	afx_msg void OnClickedButtonSubnets();
 	afx_msg void OnClickedButtonLogs();
-	afx_msg void OnClickedButtonCache();
+	afx_msg void OnClickedButtonOutput();
 };

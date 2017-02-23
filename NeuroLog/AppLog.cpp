@@ -12,13 +12,12 @@ AppLog::~AppLog()
 {
 }
 
-void AppLog::Add(CString message)
+void AppLog::Add( std::wstring message )
 {
-	appLog.Add( message );
-	TRACE( message );
+	TRACE( message.c_str() );
 	if (listBoxCtrl != NULL)
 	{
-		listBoxCtrl->AddString(message);
+		listBoxCtrl->AddString( message.c_str() );
 	}
 }
 

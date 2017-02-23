@@ -5,8 +5,8 @@
 #pragma pack(1)
 struct RawSubnet
 {
-	DWORD startAddr;
-	DWORD endAddr;
+	uint32 startAddr;
+	uint32 endAddr;
 	BYTE countryId[2];
 };
 typedef RawSubnet* LPRAWSUBNET;

@@ -11,7 +11,6 @@
 #include "RawSubnet.h"
 #include "SubnetHit.h"
 
-
 class Core
 {
 public:
@@ -24,17 +23,16 @@ public:
 	void AnalyzeSubnets();
 	void ClearData();
 
-	CString subnetsDbFolder;
-	CString logsFolder;
-	CString cacheFolder;
-	CString logsMask;
+	std::string subnetsFolder;
+	std::string outputFolder;
+	std::string logsFolder;
+	std::string logsMask;
 
-	DWORD sizeLimit; //  Do not include subnets into report when they generated less traffic that this value
-	DWORD hitsLimit; //  Do not include subnets into report when they generated less hits that this value
+	uint32 sizeLimit; //  Do not include subnets into report when they generated less traffic that this value
+	uint32 hitsLimit; //  Do not include subnets into report when they generated less hits that this value
 
 	// Logging object
 	AppLog appLog;
-
 
 	// Array of subnets
 	std::vector< Subnet > subnetsVector;
@@ -43,13 +41,13 @@ public:
 	std::vector< Hit > hitsVector;
 
 	// Map of Request URIs
-	std::unordered_map< std::string, DWORD > uriMap;
+	std::unordered_map< std::string, uint32 > uriMap;
 
 	// Map of Referrers
-	std::unordered_map< std::string, DWORD > refMap;
+	std::unordered_map< std::string, uint32 > refMap;
 
 	// Map of User Agents
-	std::unordered_map< std::string, DWORD > agentsMap;
+	//std::unordered_map< std::string, uint32 > agentsMap;
 
 private:
 
@@ -57,22 +55,21 @@ private:
 
 	bool LoadSubnetsCache( std::vector<RawSubnet>* pRawSubnets );
 	bool BuildSubnets( std::vector<RawSubnet>* pRawSubnets );
-	bool ParseSubnetsFile( std::vector<RawSubnet>* pRawSubnets, CString subnetsFilePath );
+	bool ParseSubnetsFile( std::vector<RawSubnet>* pRawSubnets, std::string fileName );
 
 	#pragma endregion
 
 	#pragma region System
 
-	DWORD GetFilesByMask( CStringArray* resultNames, CString folder, CString mask );
-	CString MakeBytesSizeString( DWORD64 value );
-	LPSTR UNICODEtoASCII( CString* pUnicodeSrt, UINT codePage );
-	bool ConvertStringAndSave( CString* pString, CFile* pFile );
+	size_t GetFilesByMask( std::vector< std::string >* fileNames, std::string folder, std::string mask );
+	std::string MakeBytesSizeString( uint64 value );
+	std::string Ipv4ToString( uint32 ipv4 );
 
 	#pragma endregion
 
 	#pragma region Logs
 
-	bool ParseLogFile( CString logFile );
+	bool ParseLogFile( std::string fileName );
 
 	#pragma endregion
 

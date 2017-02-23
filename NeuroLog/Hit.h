@@ -12,20 +12,20 @@ public:
 	Hit();
 	~Hit();
 
-	DWORD ipv4;
-	DWORD requestSize;
-
-	WORD statusCode;
-	BYTE requestTypeIndex;
-	BYTE reserved;
-
-	DWORD userAgentIndex;
-	DWORD requestUriIndex;
-	DWORD referrerIndex;
+	uint32 ipv4;
+	uint32 requestSize;
+	////
+	uint16 statusCode;
+	byte requestTypeIndex;
+	byte reserved;
+	////
+	uint32 userAgentIndex;
+	uint32 requestUriIndex;
+	uint32 referrerIndex;
 
 	BitDateTime dateTime;
 
-	enum RequestType : BYTE
+	enum RequestType : char
 	{
 		rGet = 0,
 		rPost = 1,
@@ -35,11 +35,11 @@ public:
 		rPut = 5,
 		rPatch = 6,
 		rConnect = 7,
-		rUnknown = 0xFF
+		rUnknown = -1
 	};
 
-	DWORD ParseLine( LPBYTE byteBuffer, DWORD remainBytes );
-	BYTE ParseRequest( LPBYTE buffer );
+	size_t ParseLine( pbyte byteBuffer, size_t remainBytes );
+	byte ParseRequest( pbyte buffer );
 };
 typedef Hit* LPHIT;
 

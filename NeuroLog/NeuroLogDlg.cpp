@@ -23,7 +23,7 @@ CNeuroLogDlg::CNeuroLogDlg(CWnd* pParent /*=NULL*/)	: CDialog(CNeuroLogDlg::IDD,
 	sizeLimit = GetRegistry()->GetProfileIntW( _T( "Paths" ), _T( "sizeLimit" ), 50000000 );
 	subnetsDbFolder = GetRegistry()->GetProfileStringW( _T( "Paths" ), _T( "subnetsDbFolder" ), _T( "" ) );
 	logsFolder = GetRegistry()->GetProfileStringW( _T( "Paths" ), _T( "logsFolder" ), _T( "" ) );
-	cacheFolder = GetRegistry()->GetProfileStringW( _T( "Paths" ), _T( "cacheFolder" ), _T( "" ) );
+	outputFolder = GetRegistry()->GetProfileStringW( _T( "Paths" ), _T( "outputFolder" ), _T( "" ) );
 }
 
 void CNeuroLogDlg::DoDataExchange(CDataExchange* pDX)
@@ -38,7 +38,7 @@ void CNeuroLogDlg::DoDataExchange(CDataExchange* pDX)
 	DDV_MinMaxUInt( pDX, sizeLimit, 0, 4000000000 );
 	DDX_Text( pDX, IDC_EDIT_SUBNETS_FOLDER, subnetsDbFolder );
 	DDX_Text( pDX, IDC_EDIT_LOGS_FOLDER, logsFolder );
-	DDX_Text( pDX, IDC_EDIT_CACHE_FOLDER, cacheFolder );
+	DDX_Text( pDX, IDC_EDIT_OUTPUT_FOLDER, outputFolder );
 }
 
 BEGIN_MESSAGE_MAP(CNeuroLogDlg, CDialog)
@@ -50,7 +50,7 @@ BEGIN_MESSAGE_MAP(CNeuroLogDlg, CDialog)
 	ON_BN_CLICKED( IDC_BUTTON_START, &CNeuroLogDlg::OnBnClickedButtonStart )
 	ON_BN_CLICKED( IDC_BUTTON_SUBNETS, &CNeuroLogDlg::OnClickedButtonSubnets )
 	ON_BN_CLICKED( IDC_BUTTON_LOGS, &CNeuroLogDlg::OnClickedButtonLogs )
-	ON_BN_CLICKED( IDC_BUTTON_CACHE, &CNeuroLogDlg::OnClickedButtonCache )
+	ON_BN_CLICKED( IDC_BUTTON_OUTPUT, &CNeuroLogDlg::OnClickedButtonOutput )
 END_MESSAGE_MAP()
 
 BOOL CNeuroLogDlg::OnInitDialog()
@@ -104,11 +104,9 @@ void CNeuroLogDlg::OnBnClickedOk()
 
 #pragma endregion
 
-
 void CNeuroLogDlg::OnBnClickedCancel()
 {
 	SaveToRegsitry();
-
 	// Stop using ListBox as log destination
 	GetCore()->appLog.listBoxCtrl = NULL;
 	CDialog::OnCancel();
@@ -123,7 +121,7 @@ void CNeuroLogDlg::SaveToRegsitry()
 	GetRegistry()->WriteProfileStringW( _T( "Paths" ), _T( "subnetsDbFolder" ), subnetsDbFolder );
 	GetRegistry()->WriteProfileStringW( _T( "Paths" ), _T( "logsFolder" ), logsFolder );
 	GetRegistry()->WriteProfileStringW( _T( "Paths" ), _T( "logsMask" ), logsMask );
-	GetRegistry()->WriteProfileStringW( _T( "Paths" ), _T( "cacheFolder" ), cacheFolder );
+	GetRegistry()->WriteProfileStringW( _T( "Paths" ), _T( "outputFolder" ), outputFolder );
 }
 
 
@@ -131,20 +129,26 @@ void CNeuroLogDlg::OnBnClickedButtonStart()
 {
 	SaveToRegsitry();
 
+	LPSTR pFolder;
+
 	if ( subnetsDbFolder.IsEmpty() )
 	{
-		AfxMessageBox(_T("LOL, U Mad? Where are subnet files?"));
+		AfxMessageBox(_T("Where are subnet files?"));
 		return;
 	}
-	GetCore()->subnetsDbFolder = subnetsDbFolder;
+	pFolder = UNICODEtoASCII( &subnetsDbFolder );
+	GetCore()->subnetsFolder = pFolder;
+	free( pFolder );
 
 
 	if ( logsFolder.IsEmpty() )
 	{
-		AfxMessageBox(_T("U Mad bro? Where are log files?"));
+		AfxMessageBox(_T("Where are log files?"));
 		return;
 	}
-	GetCore()->logsFolder = logsFolder;
+	pFolder = UNICODEtoASCII( &logsFolder );
+	GetCore()->logsFolder = pFolder;
+	free( pFolder );
 
 
 	if ( logsMask.IsEmpty() )
@@ -152,64 +156,84 @@ void CNeuroLogDlg::OnBnClickedButtonStart()
 		AfxMessageBox( _T( "Where is logs mask?" ) );
 		return;
 	}
-	GetCore()->logsMask = logsMask;
+	pFolder = UNICODEtoASCII( &logsMask );
+	GetCore()->logsMask = pFolder;
+	free( pFolder );
 
 
-	if ( cacheFolder.IsEmpty() )
+	if ( outputFolder.IsEmpty() )
 	{
-		AfxMessageBox(_T("Wtf, bro? We need a cache folder."));
+		AfxMessageBox(_T("We need an output folder."));
 		return;
 	}
-	GetCore()->cacheFolder = cacheFolder;
+	pFolder = UNICODEtoASCII( &outputFolder );
+	GetCore()->outputFolder = pFolder;
+	free( pFolder );
+
 
 	GetCore()->hitsLimit = hitsLimit;
 	GetCore()->sizeLimit = sizeLimit;
+
+	CWaitCursor wait;
+	GetDlgItem( IDC_BUTTON_START )->EnableWindow( FALSE );
 
 	GetCore()->LoadSubnets();
 	GetCore()->LoadLogs();
 	GetCore()->AnalyzeSubnets();
 
+	GetDlgItem( IDC_BUTTON_START )->EnableWindow( TRUE );
+
 	GetCore()->ClearData();
+	wait.Restore();
 }
 
-BOOL CNeuroLogDlg::PickTheFolder( CWnd* lp_mfcWnd, CString *lp_csFolder )
+LPSTR CNeuroLogDlg::UNICODEtoASCII( CString* pUnicodeSrt )
 {
-	BOOL l_boolResult = FALSE;
+	LPSTR pNewASCII = NULL;
+	int newSize = WideCharToMultiByte( CP_ACP, NULL, LPCWSTR( *pUnicodeSrt ), pUnicodeSrt->GetLength(), NULL, NULL, NULL, NULL );
+	if ( newSize > 0 )
+	{
+		pNewASCII = LPSTR( malloc( newSize + 1 ) );
+		memset( pNewASCII, 0, newSize + 1 );
+		newSize = WideCharToMultiByte( CP_ACP, NULL, LPCWSTR( *pUnicodeSrt ), pUnicodeSrt->GetLength(), pNewASCII, newSize, NULL, NULL );
+	}
+	return pNewASCII;
+}
 
-	LPMALLOC		pMalloc;
-	BROWSEINFO		bi;
-	LPITEMIDLIST	pidl;
+BOOL CNeuroLogDlg::PickTheFolder( CWnd* mfcWnd, CString* pcsFolder )
+{
+	BOOL boolResult = FALSE;
+	LPMALLOC pMalloc;
+	BROWSEINFO bi;
+	LPITEMIDLIST pidl;
 
 	::ZeroMemory( &bi, sizeof( bi ) );
-	CString l_csStartPath;
-	l_csStartPath = _T( "C:\\" );
-	TCHAR	m_szSelectedFolder[ MAX_PATH ];
-	memset( m_szSelectedFolder, 0, sizeof( m_szSelectedFolder ) );
-
+	TCHAR tcSelectedFolder[ MAX_PATH ];
+	memset( tcSelectedFolder, 0, sizeof( tcSelectedFolder ) );
 
 	// Gets the Shell's default allocator
 	if ( ::SHGetMalloc( &pMalloc ) == NOERROR )
 	{
 		// Get help on BROWSEINFO struct - it's got all the bit settings.
-		if ( lp_mfcWnd != NULL )
+		if ( mfcWnd != NULL )
 		{
-			bi.hwndOwner = lp_mfcWnd->m_hWnd;
+			bi.hwndOwner = mfcWnd->m_hWnd;
 		}
 		bi.pidlRoot = NULL;
-		bi.pszDisplayName = m_szSelectedFolder;
-		bi.lpszTitle = l_csStartPath;
+		bi.pszDisplayName = tcSelectedFolder;
+		bi.lpszTitle = _T("Select folder please:");
 		bi.ulFlags = 0x40 | BIF_RETURNFSANCESTORS | BIF_RETURNONLYFSDIRS | BIF_USENEWUI | BIF_EDITBOX;
 		bi.lpfn = NULL;
-		bi.lParam = ( LPARAM )( LPCTSTR )l_csStartPath;
+		bi.lParam = NULL;
 		// This next call issues the dialog box.
-		if ( ( pidl = ::SHBrowseForFolder( &bi ) ) != NULL )
+		if (( pidl = ::SHBrowseForFolder( &bi )) != NULL )
 		{
-			if ( ::SHGetPathFromIDList( pidl, m_szSelectedFolder ) )
+			if ( ::SHGetPathFromIDList( pidl, tcSelectedFolder ) )
 			{
 				// At this point pszBuffer contains the selected path
-				lp_csFolder->Empty();
-				*lp_csFolder = m_szSelectedFolder;
-				l_boolResult = TRUE;
+				pcsFolder->Empty();
+				*pcsFolder = tcSelectedFolder;
+				boolResult = TRUE;
 			} // if
 			// Free the PIDL allocated by SHBrowseForFolder.
 			pMalloc->Free( pidl );
@@ -218,11 +242,8 @@ BOOL CNeuroLogDlg::PickTheFolder( CWnd* lp_mfcWnd, CString *lp_csFolder )
 		pMalloc->Release();
 	} // if
 
-
-
-	return l_boolResult;
+	return boolResult;
 }
-
 
 void CNeuroLogDlg::OnClickedButtonSubnets()
 {
@@ -231,7 +252,6 @@ void CNeuroLogDlg::OnClickedButtonSubnets()
 	UpdateData( FALSE );
 }
 
-
 void CNeuroLogDlg::OnClickedButtonLogs()
 {
 	UpdateData( TRUE );
@@ -239,10 +259,9 @@ void CNeuroLogDlg::OnClickedButtonLogs()
 	UpdateData( FALSE );
 }
 
-
-void CNeuroLogDlg::OnClickedButtonCache()
+void CNeuroLogDlg::OnClickedButtonOutput()
 {
 	UpdateData( TRUE );
-	PickTheFolder( this, &cacheFolder );
+	PickTheFolder( this, &outputFolder );
 	UpdateData( FALSE );
 }

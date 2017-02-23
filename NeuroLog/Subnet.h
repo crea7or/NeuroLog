@@ -23,9 +23,15 @@ public:
 
 	~Subnet()
 	{
+		Clear();
+	}
+
+	void Clear()
+	{
 		if ( pHits != nullptr )
 		{
 			delete pHits;
+			pHits = nullptr;
 		}
 	}
 
@@ -43,22 +49,22 @@ public:
 		pHits->push_back( pHit );
 	}
 
-	DWORD HitsCount()
+	size_t HitsCount()
 	{
 		if ( pHits == nullptr )
 		{
 			return 0;
 		}
-		return DWORD( pHits->size());
+		return pHits->size();
 	}
 
-	DWORD64 HitsSize()
+	uint64 HitsSize()
 	{
 		if ( pHits == nullptr )
 		{
 			return 0;
 		}
-		DWORD64 size = 0;
+		uint64 size = 0;
 		for ( LPHIT pHit : *pHits )
 		{
 			size += pHit->requestSize;
@@ -66,9 +72,8 @@ public:
 		return size;
 	}
 
-
-	DWORD startAddr;
-	DWORD endAddr;
+	uint32 startAddr;
+	uint32 endAddr;
 	BYTE countryId[2];
 
 	std::vector< LPHIT >* pHits = { nullptr };
