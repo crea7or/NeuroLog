@@ -26,6 +26,6 @@ ftp.lacnic.net/pub/stats/lacnic/delegated-lacnic-latest
 
 "Minimum downloaded" - subnets with less downlaods (in bytes) will not be reported.
 
-"Cache directory" - where to place report and reparsed for efficiency databases with current network subnets.
+"Output directory" - where to place report and reparsed for efficiency databases with network subnets.
 
 4) Hit start and NeuroLog should open html page with report when it will finish.
