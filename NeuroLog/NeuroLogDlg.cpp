@@ -4,49 +4,17 @@
 #include "stdafx.h"
 #include "NeuroLog.h"
 #include "NeuroLogDlg.h"
-#include "afxdialogex.h"
+#include "Shlobj.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
 
-#pragma region About Dialog
-
-// CAboutDlg dialog used for App About
-class CAboutDlg : public CDialogEx
-{
-public:
-	CAboutDlg();
-
-// Dialog Data
-	enum { IDD = IDD_ABOUTBOX };
-
-	protected:
-	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
-
-// Implementation
-protected:
-	DECLARE_MESSAGE_MAP()
-};
-
-CAboutDlg::CAboutDlg() : CDialogEx(CAboutDlg::IDD)
-{
-}
-
-void CAboutDlg::DoDataExchange(CDataExchange* pDX)
-{
-	CDialogEx::DoDataExchange(pDX);
-}
-
-BEGIN_MESSAGE_MAP(CAboutDlg, CDialogEx)
-END_MESSAGE_MAP()
-#pragma endregion
-
 // CNeuroLogDlg message handlers
 #pragma region Main Dialog
 
 // CNeuroLogDlg dialog
-CNeuroLogDlg::CNeuroLogDlg(CWnd* pParent /*=NULL*/)	: CDialogEx(CNeuroLogDlg::IDD, pParent)
+CNeuroLogDlg::CNeuroLogDlg(CWnd* pParent /*=NULL*/)	: CDialog(CNeuroLogDlg::IDD, pParent)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 	logsMask = GetRegistry()->GetProfileStringW( _T( "Paths" ), _T( "logsMask" ), _T( "" ) );
@@ -60,75 +28,41 @@ CNeuroLogDlg::CNeuroLogDlg(CWnd* pParent /*=NULL*/)	: CDialogEx(CNeuroLogDlg::ID
 
 void CNeuroLogDlg::DoDataExchange(CDataExchange* pDX)
 {
-	CDialogEx::DoDataExchange( pDX );
-	DDX_Control( pDX, IDC_MFCEDITBROWSE1, subnetFolderControl );
-	DDX_Control( pDX, IDC_MFCEDITBROWSE2, logFolderControl );
-	DDX_Control( pDX, IDC_MFCEDITBROWSE3, cacheFolderControl );
+	CDialog::DoDataExchange( pDX );
+
 	DDX_Control( pDX, IDC_LIST_LOG, logListBoxCtrl );
-	DDX_Text( pDX, IDC_EDIT1, logsMask );
+	DDX_Text( pDX, IDC_EDIT_LOGS_MASK, logsMask );
 	DDX_Text( pDX, IDC_EDIT_HITS_LIMIT, hitsLimit );
 	DDV_MinMaxUInt( pDX, hitsLimit, 0, 4000000000 );
 	DDX_Text( pDX, IDC_EDIT_SIZE_LIMIT, sizeLimit );
 	DDV_MinMaxUInt( pDX, sizeLimit, 0, 4000000000 );
-	DDX_Text( pDX, IDC_MFCEDITBROWSE1, subnetsDbFolder );
-	DDX_Text( pDX, IDC_MFCEDITBROWSE2, logsFolder );
-	DDX_Text( pDX, IDC_MFCEDITBROWSE3, cacheFolder );
+	DDX_Text( pDX, IDC_EDIT_SUBNETS_FOLDER, subnetsDbFolder );
+	DDX_Text( pDX, IDC_EDIT_LOGS_FOLDER, logsFolder );
+	DDX_Text( pDX, IDC_EDIT_CACHE_FOLDER, cacheFolder );
 }
 
-BEGIN_MESSAGE_MAP(CNeuroLogDlg, CDialogEx)
+BEGIN_MESSAGE_MAP(CNeuroLogDlg, CDialog)
 	ON_WM_SYSCOMMAND()
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
 	ON_BN_CLICKED(IDOK, &CNeuroLogDlg::OnBnClickedOk)
 	ON_BN_CLICKED(IDCANCEL, &CNeuroLogDlg::OnBnClickedCancel)
-	ON_BN_CLICKED(IDC_BUTTON2, &CNeuroLogDlg::OnBnClickedButtonStart)
+	ON_BN_CLICKED( IDC_BUTTON_START, &CNeuroLogDlg::OnBnClickedButtonStart )
+	ON_BN_CLICKED( IDC_BUTTON_SUBNETS, &CNeuroLogDlg::OnClickedButtonSubnets )
+	ON_BN_CLICKED( IDC_BUTTON_LOGS, &CNeuroLogDlg::OnClickedButtonLogs )
+	ON_BN_CLICKED( IDC_BUTTON_CACHE, &CNeuroLogDlg::OnClickedButtonCache )
 END_MESSAGE_MAP()
 
 BOOL CNeuroLogDlg::OnInitDialog()
 {
-	CDialogEx::OnInitDialog();
+	CDialog::OnInitDialog();
 
 	// Set ListBox as Log destination
 	GetCore()->appLog.listBoxCtrl = &logListBoxCtrl;
 
-	subnetFolderControl.EnableFolderBrowseButton();
-	logFolderControl.EnableFolderBrowseButton();
-	cacheFolderControl.EnableFolderBrowseButton();
-
-	// IDM_ABOUTBOX must be in the system command range.
-	ASSERT((IDM_ABOUTBOX & 0xFFF0) == IDM_ABOUTBOX);
-	ASSERT(IDM_ABOUTBOX < 0xF000);
-
-	CMenu* pSysMenu = GetSystemMenu(FALSE);
-	if (pSysMenu != NULL)
-	{
-		BOOL bNameValid;
-		CString strAboutMenu;
-		bNameValid = strAboutMenu.LoadString(IDS_ABOUTBOX);
-		ASSERT(bNameValid);
-		if (!strAboutMenu.IsEmpty())
-		{
-			pSysMenu->AppendMenu(MF_SEPARATOR);
-			pSysMenu->AppendMenu(MF_STRING, IDM_ABOUTBOX, strAboutMenu);
-		}
-	}
-
 	SetIcon(m_hIcon, TRUE);			// Set big icon
 	SetIcon(m_hIcon, FALSE);		// Set small icon
 	return TRUE;  // return TRUE  unless you set the focus to a control
-}
-
-void CNeuroLogDlg::OnSysCommand(UINT nID, LPARAM lParam)
-{
-	if ((nID & 0xFFF0) == IDM_ABOUTBOX)
-	{
-		CAboutDlg dlgAbout;
-		dlgAbout.DoModal();
-	}
-	else
-	{
-		CDialogEx::OnSysCommand(nID, lParam);
-	}
 }
 
 void CNeuroLogDlg::OnPaint()
@@ -152,7 +86,7 @@ void CNeuroLogDlg::OnPaint()
 	}
 	else
 	{
-		CDialogEx::OnPaint();
+		CDialog::OnPaint();
 	}
 }
 
@@ -165,7 +99,7 @@ void CNeuroLogDlg::OnBnClickedOk()
 {
 	// Stop using ListBox as log destination
 	//GetCore()->appLog.listBoxCtrl = NULL;
-	//CDialogEx::OnOK();
+	//CDialog::OnOK();
 }
 
 #pragma endregion
@@ -177,7 +111,7 @@ void CNeuroLogDlg::OnBnClickedCancel()
 
 	// Stop using ListBox as log destination
 	GetCore()->appLog.listBoxCtrl = NULL;
-	CDialogEx::OnCancel();
+	CDialog::OnCancel();
 }
 
 void CNeuroLogDlg::SaveToRegsitry()
@@ -221,7 +155,6 @@ void CNeuroLogDlg::OnBnClickedButtonStart()
 	GetCore()->logsMask = logsMask;
 
 
-	cacheFolderControl.GetWindowText( cacheFolder );
 	if ( cacheFolder.IsEmpty() )
 	{
 		AfxMessageBox(_T("Wtf, bro? We need a cache folder."));
@@ -232,9 +165,84 @@ void CNeuroLogDlg::OnBnClickedButtonStart()
 	GetCore()->hitsLimit = hitsLimit;
 	GetCore()->sizeLimit = sizeLimit;
 
-	GetCore()->ClearData();
-
 	GetCore()->LoadSubnets();
 	GetCore()->LoadLogs();
 	GetCore()->AnalyzeSubnets();
+
+	GetCore()->ClearData();
+}
+
+BOOL CNeuroLogDlg::PickTheFolder( CWnd* lp_mfcWnd, CString *lp_csFolder )
+{
+	BOOL l_boolResult = FALSE;
+
+	LPMALLOC		pMalloc;
+	BROWSEINFO		bi;
+	LPITEMIDLIST	pidl;
+
+	::ZeroMemory( &bi, sizeof( bi ) );
+	CString l_csStartPath;
+	l_csStartPath = _T( "C:\\" );
+	TCHAR	m_szSelectedFolder[ MAX_PATH ];
+	memset( m_szSelectedFolder, 0, sizeof( m_szSelectedFolder ) );
+
+
+	// Gets the Shell's default allocator
+	if ( ::SHGetMalloc( &pMalloc ) == NOERROR )
+	{
+		// Get help on BROWSEINFO struct - it's got all the bit settings.
+		if ( lp_mfcWnd != NULL )
+		{
+			bi.hwndOwner = lp_mfcWnd->m_hWnd;
+		}
+		bi.pidlRoot = NULL;
+		bi.pszDisplayName = m_szSelectedFolder;
+		bi.lpszTitle = l_csStartPath;
+		bi.ulFlags = 0x40 | BIF_RETURNFSANCESTORS | BIF_RETURNONLYFSDIRS | BIF_USENEWUI | BIF_EDITBOX;
+		bi.lpfn = NULL;
+		bi.lParam = ( LPARAM )( LPCTSTR )l_csStartPath;
+		// This next call issues the dialog box.
+		if ( ( pidl = ::SHBrowseForFolder( &bi ) ) != NULL )
+		{
+			if ( ::SHGetPathFromIDList( pidl, m_szSelectedFolder ) )
+			{
+				// At this point pszBuffer contains the selected path
+				lp_csFolder->Empty();
+				*lp_csFolder = m_szSelectedFolder;
+				l_boolResult = TRUE;
+			} // if
+			// Free the PIDL allocated by SHBrowseForFolder.
+			pMalloc->Free( pidl );
+		} // if
+		// Release the shell's allocator.
+		pMalloc->Release();
+	} // if
+
+
+
+	return l_boolResult;
+}
+
+
+void CNeuroLogDlg::OnClickedButtonSubnets()
+{
+	UpdateData( TRUE );
+	PickTheFolder( this, &subnetsDbFolder );
+	UpdateData( FALSE );
+}
+
+
+void CNeuroLogDlg::OnClickedButtonLogs()
+{
+	UpdateData( TRUE );
+	PickTheFolder( this, &logsFolder );
+	UpdateData( FALSE );
+}
+
+
+void CNeuroLogDlg::OnClickedButtonCache()
+{
+	UpdateData( TRUE );
+	PickTheFolder( this, &cacheFolder );
+	UpdateData( FALSE );
 }

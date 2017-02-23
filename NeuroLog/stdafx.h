@@ -18,7 +18,7 @@
 #define _AFX_ALL_WARNINGS
 
 #include <afxwin.h>         // MFC core and standard components
-#include <afxext.h>         // MFC extensions
+//#include <afxext.h>         // MFC extensions
 
 #include "HighPrefTimer.h"
 #include <vector>
@@ -28,13 +28,11 @@
 
 
 #ifndef _AFX_NO_OLE_SUPPORT
-#include <afxdtctl.h>           // MFC support for Internet Explorer 4 Common Controls
+//#include <afxdtctl.h>           // MFC support for Internet Explorer 4 Common Controls
 #endif
 #ifndef _AFX_NO_AFXCMN_SUPPORT
 #include <afxcmn.h>             // MFC support for Windows Common Controls
 #endif // _AFX_NO_AFXCMN_SUPPORT
-
-#include <afxcontrolbars.h>     // MFC support for ribbons and control bars
 
 
 #include "Core.h"

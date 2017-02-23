@@ -12,8 +12,8 @@
 
 // CNeuroLogApp
 
-BEGIN_MESSAGE_MAP(CNeuroLogApp, CWinAppEx)
-	ON_COMMAND(ID_HELP, &CWinAppEx::OnHelp)
+BEGIN_MESSAGE_MAP(CNeuroLogApp, CWinApp)
+	ON_COMMAND(ID_HELP, &CWinApp::OnHelp)
 END_MESSAGE_MAP()
 
 
@@ -48,7 +48,6 @@ BOOL CNeuroLogApp::InitInstance()
 	InitCtrls.dwICC = ICC_WIN95_CLASSES;
 	InitCommonControlsEx(&InitCtrls);
 
-	CWinAppEx::InitShellManager();
 
 	CWinApp::InitInstance();
 

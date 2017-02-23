@@ -3,12 +3,10 @@
 
 #pragma once
 
-#include "afxeditbrowsectrl.h"
 #include "afxwin.h"
 
-
 // CNeuroLogDlg dialog
-class CNeuroLogDlg : public CDialogEx
+class CNeuroLogDlg : public CDialog
 {
 // Construction
 public:
@@ -25,10 +23,11 @@ public:
 protected:
 	HICON m_hIcon;
 
+	BOOL PickTheFolder( CWnd* lp_mfcWnd, CString *lp_csFolder );
 	void SaveToRegsitry();
+
 	// Generated message map functions
 	virtual BOOL OnInitDialog();
-	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
@@ -36,14 +35,17 @@ public:
 	afx_msg void OnBnClickedOk();
 	afx_msg void OnBnClickedCancel();
 	afx_msg void OnBnClickedButtonStart();
-	CMFCEditBrowseCtrl subnetFolderControl;
-	CMFCEditBrowseCtrl logFolderControl;
-	CMFCEditBrowseCtrl cacheFolderControl;
+
 	CListBox logListBoxCtrl;
-	CString logsMask;
+
 	DWORD hitsLimit;
 	DWORD sizeLimit;
+
+	CString logsMask;
 	CString subnetsDbFolder;
 	CString logsFolder;
 	CString cacheFolder;
+	afx_msg void OnClickedButtonSubnets();
+	afx_msg void OnClickedButtonLogs();
+	afx_msg void OnClickedButtonCache();
 };

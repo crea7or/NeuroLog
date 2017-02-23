@@ -14,7 +14,7 @@
 // See CNeuroLog.cpp for the implementation of this class
 //
 
-class CNeuroLogApp : public CWinAppEx
+class CNeuroLogApp : public CWinApp
 {
 public:
 	CNeuroLogApp();
