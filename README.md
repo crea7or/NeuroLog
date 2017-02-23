@@ -1,5 +1,5 @@
 # NeuroLog
-Web log analyzer that concatenates requests from the same subnets to detect robots activity
+ NeuroLog is a web log analyzer that summarize requests from the same network subnets to detect robots activity
 
 1) Databases with current network subnets (netblocks) should be downloaded before first use.
 The exact links for each of the datasets are as follows:
