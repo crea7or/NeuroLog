@@ -13,14 +13,19 @@ ftp.lacnic.net/pub/stats/lacnic/delegated-lacnic-latest
 2) Log files format that NeuroLog can parse:
 1.2.3.4 - [11/Feb/2017:00:00:07 -0400] "GET /github/ HTTP/1.1" 200 7520 "https://www.github.com" "Mozilla/5.0 ..."
 
-3) "NIC Files diretory" - folder where you saved databases with current network subnets.
+![screenshot](/neurolog.png?raw=true "screenshot")
+
+3) Little help:
+"NIC Files diretory" - folder where you saved databases with current network subnets.
+
 "Log files directory" - where you log files.
+
 "Log files mask" - mask for files, DOS notation ( * - any symbol etc.)
+
 "Minimum hits to report" - subnets with less hits will not be reported.
+
 "Minimum downloaded" - subnets with less downlaods (in bytes) will not be reported.
+
 "Cache directory" - where to place report and reparsed for efficiency databases with current network subnets.
 
 4) Hit start and NeuroLog should open html page with report when it will finish.
-
-
-
