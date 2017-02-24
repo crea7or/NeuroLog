@@ -49,6 +49,8 @@ public:
 	// Map of User Agents
 	//std::unordered_map< std::string, uint32 > agentsMap;
 
+	size_t totalHitsSession;
+
 private:
 
 	#pragma region Subnets
@@ -64,7 +66,7 @@ private:
 	size_t GetFilesByMask( std::vector< std::string >* fileNames, std::string folder, std::string mask );
 	std::string MakeBytesSizeString( uint64 value );
 	std::string Ipv4ToString( uint32 ipv4 );
-
+	byte SetCIDR( uint32 ips );
 	#pragma endregion
 
 	#pragma region Logs

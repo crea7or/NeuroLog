@@ -15,8 +15,12 @@ public:
 // Dialog Data
 	enum { IDD = IDD_NEUROLOG_DIALOG };
 
-	protected:
+
+	void UnlockDlg( BOOL unlockValue );
+
+protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV support
+
 
 
 // Implementation

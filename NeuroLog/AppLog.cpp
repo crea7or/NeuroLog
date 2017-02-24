@@ -17,7 +17,7 @@ void AppLog::Add( std::wstring message )
 	TRACE( message.c_str() );
 	if (listBoxCtrl != NULL)
 	{
-		listBoxCtrl->AddString( message.c_str() );
+		listBoxCtrl->SetCurSel( listBoxCtrl->AddString( message.c_str()));
 	}
 }
 

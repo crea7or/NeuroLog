@@ -1,3 +1,4 @@
+// Copyright (c) CEZEO software Ltd. http://www.cezeo.com
 
 // stdafx.h : include file for standard system include files,
 // or project specific include files that are used frequently,
@@ -20,7 +21,6 @@
 #include <afxwin.h>         // MFC core and standard components
 //#include <afxext.h>         // MFC extensions
 
-#include "HighPrefTimer.h"
 #include <vector>
 #include <string>
 
@@ -37,7 +37,6 @@
 #include "Types.h"
 #include "Core.h"
 #include "Registry.h"
-
 
 #ifdef _UNICODE
 #if defined _M_IX86

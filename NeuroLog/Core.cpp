@@ -13,12 +13,20 @@
 #define SUBNETS_CACHE_FILENAME "\\NeuroLog.Subnets"
 #define SUBNETS_REPORT_FILENAME "\\NeuroLog.Statistics.html"
 
-#define HTML_START "<html><head><style type=\"text/css\">body,table{font-family:Tahoma,Sans-serif;font-size:10pt;text-align:left}</style></head><body>"
+#define HTML_START "<html><head><style type=\"text/css\">body,table{font-family:Tahoma,Sans-serif;font-size:10pt;text-align:left}</style><script>function elm(e){$el=e.target.parentNode.querySelector('div.el');if($el.style.display=='none'){$el.style.display='block'}else{$el.style.display='none'};}</script></head><body>"
 #define HTML_START_DATA "<table cellspacing=\"3\" cellpadding=\"5\" width=\"50%\" style=\"float: left;\"><tr bgcolor=\"Moccasin\"><td>Subnet IP(first)</td><td>Country</td><td>Hits</td><td>Traffic</td></tr>"
 #define HTML_MID "</table><table cellspacing=\"3\" cellpadding=\"5\" width=\"50%\" style=\"float: left;\"><tr bgcolor=\"Moccasin\"><td>Subnet IP(first)</td><td>Country</td><td>Hits</td><td>Traffic</td></tr>"
+#define HTML_IP_DIV_START "&nbsp;&nbsp;<a href=\"#\" onclick=\"elm(event); return false;\">#</a><div style=\"display: none\" class=\"el\"><p>"
+#define HTML_IP_DIV_END "</p></div>"
 #define HTML_END "</table></body></html>"
 #define HTML_BG_CELL_ODD "<tr bgcolor=\"#F5F5DC\">"
 #define HTML_BG_CELL_EVEN "<tr bgcolor=\"#FFF8DC\">"
+
+//
+uint32 addresToCIDR[ 32 ] = { 2147483648, 1073741824, 536870912, 268435456, 134217728,
+67108864, 33554432, 16777216, 8388608, 4194304, 2097152, 1048576, 524288, 262144, 131072,
+65536, 32768, 16384, 8192, 4096, 2048, 1024, 512, 256, 128,
+64, 32, 16, 8, 4, 2, 1 };
 
 Core::Core()
 {
@@ -34,6 +42,8 @@ Core::~Core()
 		}
 	}
 }
+
+
 
 void Core::ClearData()
 {
@@ -108,6 +118,16 @@ void Core::AnalyzeSubnets()
 		outputStream << HTML_START_DATA;
 		// First table header
 
+
+		std::vector< SubnetHitStatCnt > hitCountVector;
+		std::vector< SubnetHitStatSize > hitSizeVector;
+
+		std::vector< SubnetHitStatSize >::iterator itSubHitSize;
+		std::vector< SubnetHitStatCnt >::iterator itSubHitCnt;;
+
+		std::unordered_map< uint32, uint32 >::iterator itMpCnt;
+		std::unordered_map< uint32, uint64 >::iterator itMpSz;
+
 		// First table data
 		for ( auto i : subnetsPtrs )
 		{
@@ -117,8 +137,31 @@ void Core::AnalyzeSubnets()
 				outputStream << "<td><a href=\"https://mxtoolbox.com/SuperTool.aspx?action=arin:";
 				outputStream << Ipv4ToString( i->startAddr );
 				outputStream << "\" target=\"_blank\">";
-				outputStream << Ipv4ToString( i->startAddr );
-				outputStream << "</a></td><td>" << i->countryId[ 0 ] << i->countryId[ 1 ] << "</td><td>" << i->HitsCount() << "</td><td>" << MakeBytesSizeString( i->HitsSize());
+				outputStream << Ipv4ToString( i->startAddr ) << "/" << std::to_string( i->cidr ) << "</a>";
+
+				if ( i->pHits != nullptr && i->pHits->size() > 0 )
+				{
+					outputStream << HTML_IP_DIV_START;
+
+					for ( itMpCnt = i->pHitsMap->begin(); itMpCnt != i->pHitsMap->end(); ++itMpCnt )
+					{
+						hitCountVector.push_back( SubnetHitStatCnt( itMpCnt->first, itMpCnt->second ) );
+					}
+
+					std::sort( hitCountVector.begin(), hitCountVector.end(), SubnetHitStatCntSort());
+					for ( itSubHitCnt = hitCountVector.begin(); itSubHitCnt != hitCountVector.end(); ++itSubHitCnt )
+					{
+						outputStream << "<a href=\"https://mxtoolbox.com/SuperTool.aspx?action=arin:";
+						outputStream << Ipv4ToString( itSubHitCnt->ipv4 );
+						outputStream << "\" target=\"_blank\">";
+						outputStream << Ipv4ToString( itSubHitCnt->ipv4 ) << "</a> (" << itSubHitCnt->count << ")<br/>";
+					}
+					hitCountVector.clear();
+
+					outputStream << HTML_IP_DIV_END;
+				}
+
+				outputStream << "</td><td>" << i->countryId[ 0 ] << i->countryId[ 1 ] << "</td><td>" << i->HitsCount() << "</td><td>" << MakeBytesSizeString( i->HitsSize());
 				++bgColor;
 			}
 		}
@@ -144,8 +187,30 @@ void Core::AnalyzeSubnets()
 				outputStream << "<td><a href=\"https://mxtoolbox.com/SuperTool.aspx?action=arin:";
 				outputStream << Ipv4ToString( i->startAddr );
 				outputStream << "\" target=\"_blank\">";
-				outputStream << Ipv4ToString( i->startAddr );
-				outputStream << "</a></td><td>" << i->countryId[ 0 ] << i->countryId[ 1 ] << "</td><td>" << i->HitsCount() << "</td><td>" << MakeBytesSizeString( i->HitsSize() );
+				outputStream << Ipv4ToString( i->startAddr ) << "/" << std::to_string( i->cidr ) << "</a>";
+
+				if ( i->pHits != nullptr && i->pHits->size() > 0 )
+				{
+					outputStream << HTML_IP_DIV_START;
+
+					for ( itMpSz = i->pHitsSizeMap->begin(); itMpSz != i->pHitsSizeMap->end(); ++itMpSz )
+					{
+						hitSizeVector.push_back( SubnetHitStatSize( itMpSz->first, itMpSz->second ) );
+					}
+
+					std::sort( hitSizeVector.begin(), hitSizeVector.end(), SubnetHitStatSizeSort() );
+					for ( itSubHitSize = hitSizeVector.begin(); itSubHitSize != hitSizeVector.end(); ++itSubHitSize )
+					{
+						outputStream << "<a href=\"https://mxtoolbox.com/SuperTool.aspx?action=arin:";
+						outputStream << Ipv4ToString( itSubHitSize->ipv4 );
+						outputStream << "\" target=\"_blank\">";
+						outputStream << Ipv4ToString( itSubHitSize->ipv4 ) << "</a> ( " << MakeBytesSizeString( itSubHitSize->size) << " )<br/>";
+					}
+					hitSizeVector.clear();
+
+					outputStream << HTML_IP_DIV_END;
+				}
+				outputStream << "</td><td>" << i->countryId[ 0 ] << i->countryId[ 1 ] << "</td><td>" << i->HitsCount() << "</td><td>" << MakeBytesSizeString( i->HitsSize() );
 				++bgColor;
 			}
 		}
@@ -172,6 +237,7 @@ bool Core::LoadLogs()
 {
 	bool result = false;
 
+	totalHitsSession = 0;
 	std::vector< std::string > fileNames;
 	GetFilesByMask( &fileNames, logsFolder, logsMask );
 
@@ -234,12 +300,15 @@ bool Core::LoadLogs()
 
 	}
 
+	totalHitsSession = hitsVector.size();
+
 	return result;
 }
 
 bool Core::ParseLogFile( std::string logFileName )
 {
 	bool result = true;
+
 	pbyte byteBuffer = nullptr;
 	pbyte wokringBuffer;
 	Hit hit;
@@ -564,12 +633,15 @@ bool Core::ParseSubnetsFile( std::vector<RawSubnet>* pRawSubnets, std::string su
 						else if ( substring == 5 && validEntry )
 						{
 							byteBuffer[ cnt ] = 0x00;
-							// workingByteBuffer to byteBuffer[cnt] possilbe number of ip addresses (int)
+							// workingByteBuffer to byteBuffer[cnt] possilbe number of ip addresses (uint32)
+							// stoul 10% slower
+							//uint32 addrs = std::stoul(( pchar )workingByteBuffer );
 							int number = atoi( ( pchar )workingByteBuffer );
 							if ( number < INT_MAX && number > 0 )
 							{
 								// cool, something valid
 								subnet.endAddr = subnet.startAddr + ( number - 1 );
+								subnet.cidr = SetCIDR( uint32( number ));
 								// Add element to vector
 								pRawSubnets->push_back( subnet );
 								subnets++;
@@ -685,6 +757,19 @@ std::string Core::Ipv4ToString( uint32 ipv4 )
 	std::ostringstream stringStream;
 	stringStream << (int)(HIBYTE(HIWORD(ipv4))) << "." << (int)(LOBYTE(HIWORD(ipv4))) << "." << (int)(HIBYTE(LOWORD(ipv4))) << "." << (int)(LOBYTE(LOWORD(ipv4)));
 	return std::string( stringStream.str() );
+}
+
+// Numbers of addresses to CIDR
+byte Core::SetCIDR( uint32 ips )
+{
+	for ( byte index = 0; index < 32; ++index )
+	{
+		if ( addresToCIDR[ index ] == ips )
+		{
+			return index + 1;
+		}
+	}
+	return 0;
 }
 
 #pragma endregion

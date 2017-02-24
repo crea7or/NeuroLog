@@ -5,6 +5,7 @@
 #include "NeuroLog.h"
 #include "NeuroLogDlg.h"
 #include "Shlobj.h"
+#include "ChronoTimer.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -106,9 +107,9 @@ void CNeuroLogDlg::OnBnClickedOk()
 
 void CNeuroLogDlg::OnBnClickedCancel()
 {
+	GetCore()->appLog.listBoxCtrl = NULL;
 	SaveToRegsitry();
 	// Stop using ListBox as log destination
-	GetCore()->appLog.listBoxCtrl = NULL;
 	CDialog::OnCancel();
 }
 
@@ -124,6 +125,29 @@ void CNeuroLogDlg::SaveToRegsitry()
 	GetRegistry()->WriteProfileStringW( _T( "Paths" ), _T( "outputFolder" ), outputFolder );
 }
 
+DWORD WINAPI Launch( LPVOID lpParam )
+{
+	CNeuroLogDlg* dlg = ( CNeuroLogDlg* )lpParam;
+
+	GetCore()->appLog.Add( L" " );
+
+	ChronoTimer timer;
+	timer.Start();
+
+	GetCore()->LoadSubnets();
+	GetCore()->LoadLogs();
+	GetCore()->AnalyzeSubnets();
+	GetCore()->ClearData();
+
+	timer.Stop();
+	if ( timer.GetElapsedMillisecondsRaw().count() > 0 && GetCore()->totalHitsSession > 0 )
+	{
+		GetCore()->appLog.Add( L"Total speed: " + std::to_wstring( GetCore()->totalHitsSession / timer.GetElapsedMillisecondsRaw().count() ) + L" hits/ms" );
+	}
+	dlg->UnlockDlg( TRUE );
+
+	return 0;
+}
 
 void CNeuroLogDlg::OnBnClickedButtonStart()
 {
@@ -177,6 +201,9 @@ void CNeuroLogDlg::OnBnClickedButtonStart()
 	CWaitCursor wait;
 	GetDlgItem( IDC_BUTTON_START )->EnableWindow( FALSE );
 
+	HANDLE hThread = CreateThread( NULL, 0, Launch, this, 0, NULL );
+
+	/*
 	GetCore()->LoadSubnets();
 	GetCore()->LoadLogs();
 	GetCore()->AnalyzeSubnets();
@@ -184,6 +211,7 @@ void CNeuroLogDlg::OnBnClickedButtonStart()
 	GetDlgItem( IDC_BUTTON_START )->EnableWindow( TRUE );
 
 	GetCore()->ClearData();
+	*/
 	wait.Restore();
 }
 
@@ -265,3 +293,9 @@ void CNeuroLogDlg::OnClickedButtonOutput()
 	PickTheFolder( this, &outputFolder );
 	UpdateData( FALSE );
 }
+
+void CNeuroLogDlg::UnlockDlg( BOOL unlockValue )
+{
+	GetDlgItem( IDC_BUTTON_START )->EnableWindow( unlockValue );
+}
+
