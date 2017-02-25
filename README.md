@@ -10,6 +10,10 @@ ftp.apnic.net/pub/stats/apnic/delegated-apnic-latest
 ftp.lacnic.net/pub/stats/lacnic/delegated-lacnic-latest
 (rename them to *.txt if they not)
 
+or use "IP address to country" database from https://db-ip.com/db/
+
+NeuroLog now supports both of them. Db from db-ip.com/db/ looks more accurate, however a bit strange in the networks adressing.
+
 2) Log files format that NeuroLog can parse:
 1.2.3.4 - [11/Feb/2017:00:00:07 -0400] "GET /github/ HTTP/1.1" 200 7520 "https://www.github.com" "Mozilla/5.0 ..."
 
