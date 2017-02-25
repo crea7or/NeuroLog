@@ -57,7 +57,8 @@ private:
 
 	bool LoadSubnetsCache( std::vector<RawSubnet>* pRawSubnets );
 	bool BuildSubnets( std::vector<RawSubnet>* pRawSubnets );
-	bool ParseSubnetsFile( std::vector<RawSubnet>* pRawSubnets, std::wstring fileName );
+	bool ParseSubnetsFile( std::vector<RawSubnet>* pRawSubnets, std::wstring subnetsFilePath );
+	bool ParseSubnetsCsvFile( std::vector<RawSubnet>* pRawSubnets, std::wstring subnetsFilePath );
 
 	#pragma endregion
 

@@ -518,11 +518,28 @@ bool Core::BuildSubnets( std::vector<RawSubnet>* pRawSubnets )
 	std::vector< std::wstring > fileNames;
 	GetFilesByMask( &fileNames, subnetsFolder, L"*.txt" );
 
-	appLog.Add( L"Subnets db files found: " + std::to_wstring( fileNames.size()));
+	appLog.Add( L"Subnets *.txt db files found: " + std::to_wstring( fileNames.size()));
 
 	for ( size_t index = 0; index < fileNames.size(); index++ )
 	{
 		ParseSubnetsFile( pRawSubnets, fileNames[ index ] );
+	}
+
+	if ( fileNames.size() == 0 )
+	{
+		GetFilesByMask( &fileNames, subnetsFolder, L"*.csv" );
+
+		appLog.Add( L"Subnets *.csv db files found: " + std::to_wstring( fileNames.size() ) );
+
+		for ( size_t index = 0; index < fileNames.size(); index++ )
+		{
+			ParseSubnetsCsvFile( pRawSubnets, fileNames[ index ] );
+		}
+	}
+
+	if ( fileNames.size() == 0 )
+	{
+		appLog.Add( L"Subnets files are not found, please, download");
 	}
 
 	RawSubnetsSort sortObj;
@@ -531,19 +548,21 @@ bool Core::BuildSubnets( std::vector<RawSubnet>* pRawSubnets )
 	pRawSubnets->shrink_to_fit();
 
 	// Save DB to cache
-	uint32 version = 0;
-
-	std::wstring cacheFile = outputFolder + SUBNETS_CACHE_FILENAME;
-	std::ofstream outputStream;
-	outputStream.open( cacheFile, std::ios::binary );
-	if ( outputStream.is_open())
+	if ( pRawSubnets->size() > 0 )
 	{
-		outputStream.write( ( pchar )&version, sizeof( version ) );
-		for ( auto subnet : *pRawSubnets )
+		uint32 version = 0;
+		std::wstring cacheFile = outputFolder + SUBNETS_CACHE_FILENAME;
+		std::ofstream outputStream;
+		outputStream.open( cacheFile, std::ios::binary );
+		if ( outputStream.is_open() )
 		{
-			outputStream.write( ( pchar )&subnet, sizeof( subnet ));
+			outputStream.write( ( pchar )&version, sizeof( version ) );
+			for ( auto subnet : *pRawSubnets )
+			{
+				outputStream.write( ( pchar )&subnet, sizeof( subnet ) );
+			}
+			outputStream.close();
 		}
-		outputStream.close();
 	}
 
 	return true;
@@ -668,7 +687,133 @@ bool Core::ParseSubnetsFile( std::vector<RawSubnet>* pRawSubnets, std::wstring s
 	}
 	catch( ... )
 	{
-		//;
+		appLog.Add( L"Oh, some exception..." );
+	}
+
+	if ( byteBuffer != nullptr )
+	{
+		free( byteBuffer );
+	}
+
+	return true;
+}
+
+bool Core::ParseSubnetsCsvFile( std::vector<RawSubnet>* pRawSubnets, std::wstring subnetsFilePath )
+{
+	RawSubnet subnet;
+	IN_ADDR ipAddr;
+	size_t fileSize;
+	pbyte byteBuffer = nullptr;
+
+	try
+	{
+		std::ifstream inputStream;
+		inputStream.open( subnetsFilePath, std::ios::binary | std::ios::ate );
+		if ( inputStream.is_open() )
+		{
+			fileSize = ( size_t )inputStream.tellg();
+			inputStream.seekg( 0 );
+
+			if ( fileSize > 0 && fileSize < 128000000 ) // 128mbs is enough for everyone
+			{
+				// File loading
+				byteBuffer = ( pbyte )malloc( fileSize );
+				inputStream.read( ( pchar )byteBuffer, fileSize );
+				pbyte workingByteBuffer = byteBuffer;
+
+				// Performance test
+				ChronoTimer timer;
+				timer.Start();
+				size_t lines = 0;
+				size_t subnets = 0;
+				// Performance test
+
+				// sample line
+				// "104.167.227.232","104.167.231.255","US"
+				// we need all of them
+				byte stopByte = 0x22; // used to skip invalid lines
+				size_t substring = 0;
+				for ( size_t cnt = 0; cnt < fileSize; ++cnt )
+				{
+					// traverse between separators
+					if ( byteBuffer[ cnt ] == stopByte ) // separator
+					{
+						++substring;
+						if ( substring == 2 ) // start address
+						{
+							byteBuffer[ cnt ] = 0x00;
+							if (( fileSize - cnt ) > 5 && ( workingByteBuffer[ 5 ] == 0x3a )) // : in ipv6 line
+							{
+								stopByte = 0xff;
+							}
+							else
+							{
+								// workingByteBuffer to byteBuffer[cnt] possilbe ipv4 address
+								if ( inet_pton( AF_INET, ( pchar )workingByteBuffer, &ipAddr ) == 1 )
+								{
+									// ok ipv4 here
+									subnet.startAddr = ntohl( ipAddr.S_un.S_addr );
+								}
+								else
+								{
+									// no, not valid
+									// do not even check for final value
+									stopByte = 0xff;
+								}
+							}
+						}
+						else if ( substring == 4 ) // end address
+						{
+							byteBuffer[ cnt ] = 0x00;
+							// workingByteBuffer to byteBuffer[cnt] possilbe ipv4 address
+							if ( inet_pton( AF_INET, ( pchar )workingByteBuffer, &ipAddr ) == 1 )
+							{
+								// ok ipv4 here
+								subnet.endAddr = ntohl( ipAddr.S_un.S_addr );
+								uint32 number = ( subnet.endAddr - subnet.startAddr ) + 1; //calculating number of addresses in range
+								subnet.cidr = SetCIDR( uint32( number ) );
+							}
+							else
+							{
+								// no, not valid
+								// do not even check for final value
+								stopByte = 0xff;
+							}
+						}
+						else if ( substring == 6 ) // country
+						{
+							subnet.countryId[ 0 ] = workingByteBuffer[ 0 ];
+							subnet.countryId[ 1 ] = workingByteBuffer[ 1 ];
+							// Add element to vector
+							pRawSubnets->push_back( subnet );
+							subnets++;
+						}
+						workingByteBuffer = byteBuffer + cnt + 1; // next char after stopByte
+					}
+					else if ( byteBuffer[ cnt ] < 0x20 ) // end of line
+					{
+						workingByteBuffer = byteBuffer + cnt + 1; // start of the line
+						substring = 0;
+						stopByte = 0x22;
+						lines++;
+					}
+				}
+
+				// Performance test
+				timer.Stop();
+				appLog.Add( L"Subnets build time: " + std::to_wstring( subnets ) + L" per " + timer.GetElapsedMilliseconds() );
+				// Performance test
+			}
+			else
+			{
+				// subnet db file too small or too big
+			}
+			inputStream.close();
+		}
+	}
+	catch ( ... )
+	{
+		appLog.Add( L"Oh, some exception..." );
 	}
 
 	if ( byteBuffer != nullptr )

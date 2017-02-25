@@ -26,13 +26,12 @@ size_t Hit::ParseLine( pbyte byteBuffer, size_t remainBytes )
 	// 0 - ip, 1 - date&time, 2 - reuest+uri, 3 return code, 4 size, 5 referrer, 6 user agent
 	uint32 valueType = 0;
 	size_t counter;
-	byte stopbyte = 0x20; // space after IP as stopbyte
-	bool validEntry = true;
+	byte stopByte = 0x20; // space after IP as stopbyte , 0xFF - invalid entry, 0xFE - valid and skip to end of line
 	for ( cnt = 0; cnt < remainBytes; cnt++ )
 	{
 		// traverse between separators
 		current = &byteBuffer[ cnt ];
-		if ( byteBuffer[ cnt ] == stopbyte )
+		if ( byteBuffer[ cnt ] == stopByte )
 		{
 			switch( valueType )
 			{
@@ -45,26 +44,25 @@ size_t Hit::ParseLine( pbyte byteBuffer, size_t remainBytes )
 						// ok ipv4 here
 						ipv4 = ntohl( ipAddr.S_un.S_addr );
 						//
-						stopbyte = 0x5B; // data&time start
+						stopByte = 0x5B; // data&time start
 						valueType = 1; // data&time [
 					}
 					else
 					{
 						// no, not valid
 						// do not even check for the final value
-						validEntry = false;
-						stopbyte = 0xFF; // skip to end
+						stopByte = 0xFF; // skip to end
 					}
 				}
 				break;
 
 				case 1: // Date&Time
 				{
-					if ( stopbyte == 0x5B )
+					if ( stopByte == 0x5B )
 					{
 						// before date&time
 						workingBuffer = byteBuffer + cnt + 1;
-						stopbyte = 0x5D; // after data&time ]
+						stopByte = 0x5D; // after data&time ]
 					}
 					else
 					{
@@ -79,13 +77,12 @@ size_t Hit::ParseLine( pbyte byteBuffer, size_t remainBytes )
 							dateTime.SetFrom2C( workingBuffer + 15, BitDateTime::mMinutes );
 							dateTime.SetFrom2C( workingBuffer + 18, BitDateTime::mSeconds );
 
-							stopbyte = 0x22; // " before request type
+							stopByte = 0x22; // " before request type
 							valueType = 2; // request
 						}
 						else
 						{
-							validEntry = false;
-							stopbyte = 0xFF; // skip to end
+							stopByte = 0xFF; // skip to end
 						}
 					}
 				}
@@ -93,11 +90,11 @@ size_t Hit::ParseLine( pbyte byteBuffer, size_t remainBytes )
 
 				case 2: // Request type
 				{
-					if ( stopbyte == 0x22 )
+					if ( stopByte == 0x22 )
 					{
 						// before request type
 						workingBuffer = byteBuffer + cnt + 1;
-						stopbyte = 0x20; // after request type ]
+						stopByte = 0x20; // after request type ]
 					}
 					else
 					{
@@ -105,15 +102,14 @@ size_t Hit::ParseLine( pbyte byteBuffer, size_t remainBytes )
 						{
 							requestTypeIndex = ParseRequest( workingBuffer );
 
-							stopbyte = 0x20; // " " before request URI
+							stopByte = 0x20; // " " before request URI
 							workingBuffer = byteBuffer + cnt + 1;
 							valueType = 4; // request URI end
 //							valueType = 3; // request URI start
 						}
 						else
 						{
-							validEntry = false;
-							stopbyte = 0xFF; // skip to end
+							stopByte = 0xFF; // skip to end
 						}
 					}
 				}
@@ -158,8 +154,7 @@ size_t Hit::ParseLine( pbyte byteBuffer, size_t remainBytes )
 					}
 					else
 					{
-						validEntry = false;
-						stopbyte = 0xFF; // skip to end
+						stopByte = 0xFF; // skip to end
 					}
 					valueType = 6; // request size
 				}
@@ -181,13 +176,12 @@ size_t Hit::ParseLine( pbyte byteBuffer, size_t remainBytes )
 					{
 						// cool, something valid
 						requestSize = ( uint32 )number;
-						stopbyte = 0x22; // " before referrer
+						stopByte = 0x22; // " before referrer
 						valueType = 8; // referrer
 					}
 					else
 					{
-						validEntry = false;
-						stopbyte = 0xFF; // skip to end
+						stopByte = 0xFF; // skip to end
 					}
 				}
 				break;
@@ -218,7 +212,7 @@ size_t Hit::ParseLine( pbyte byteBuffer, size_t remainBytes )
 					}
 #endif
 					// Everything good
-					stopbyte = 0xFE; // skip to end of line
+					stopByte = 0xFE; // skip to end of line
 				}
 				break;
 			};
@@ -230,7 +224,7 @@ size_t Hit::ParseLine( pbyte byteBuffer, size_t remainBytes )
 		}
 	}
 
-	if ( stopbyte != 0xFE )
+	if ( stopByte != 0xFE )
 	{
 		ipv4 = 0;
 	}
