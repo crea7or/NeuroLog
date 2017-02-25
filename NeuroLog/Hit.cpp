@@ -4,6 +4,7 @@
 #include "Hit.h"
 #include "Ws2tcpip.h"
 
+
 Hit::Hit()
 {
 }
@@ -128,6 +129,7 @@ size_t Hit::ParseLine( pbyte byteBuffer, size_t remainBytes )
 				case 4: // URI end
 				{
 					byteBuffer[ cnt ] = 0x00;
+#ifndef DO_NOT_COLLECT_REQUEST_URI
 					std::string uri( ( pchar )workingBuffer );
 					std::unordered_map< std::string, uint32 >::const_iterator got = GetCore()->uriMap.find( uri );
 					if ( got == GetCore()->uriMap.end() )
@@ -141,6 +143,7 @@ size_t Hit::ParseLine( pbyte byteBuffer, size_t remainBytes )
 					{
 						requestUriIndex = got->second;
 					}
+#endif
 					valueType = 5; // return code,  stopbyte = 0x20 - before return code
 				}
 				break;
@@ -199,6 +202,7 @@ size_t Hit::ParseLine( pbyte byteBuffer, size_t remainBytes )
 				case 9: // referrer end
 				{
 					byteBuffer[ cnt ] = 0x00;
+#ifndef DO_NOT_COLLECT_REFFERER
 					std::string ref( ( pchar )workingBuffer );
 					std::unordered_map< std::string, uint32 >::const_iterator got = GetCore()->refMap.find( ref );
 					if ( got == GetCore()->refMap.end() )
@@ -212,7 +216,7 @@ size_t Hit::ParseLine( pbyte byteBuffer, size_t remainBytes )
 					{
 						referrerIndex = got->second;
 					}
-
+#endif
 					// Everything good
 					stopbyte = 0xFE; // skip to end of line
 				}
