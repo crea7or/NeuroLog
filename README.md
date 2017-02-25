@@ -24,8 +24,8 @@ ftp.lacnic.net/pub/stats/lacnic/delegated-lacnic-latest
 
 "Minimum hits to report" - subnets with less hits will not be reported.
 
-"Minimum downloaded" - subnets with less downlaods (in bytes) will not be reported.
+"Minimum downloaded" - subnets with less downloads (in bytes) will not be reported.
 
-"Output directory" - where to place report and reparsed for efficiency databases with network subnets.
+"Output directory" - where to place report and reparsed for efficiency databases (with network subnets).
 
 4) Hit start and NeuroLog should open html page with report when it will finish.
