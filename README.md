@@ -29,3 +29,18 @@ ftp.lacnic.net/pub/stats/lacnic/delegated-lacnic-latest
 "Output directory" - where to place report and reparsed for efficiency databases (with network subnets).
 
 4) Hit start and NeuroLog should open html page with report when it will finish.
+
+5) Console version params:
+
+-sub path     - subnets folder
+
+-log path     - logs folder
+
+-out path     - output folder
+
+-mask \*.log   - mask for log files in log folder
+
+-hitl number  - minimum hits from subnet to report (optional)
+
+-sizel number - minimum download size from subnet to report (optional)
+
