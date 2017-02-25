@@ -153,16 +153,12 @@ void CNeuroLogDlg::OnBnClickedButtonStart()
 {
 	SaveToRegsitry();
 
-	LPSTR pFolder;
-
 	if ( subnetsDbFolder.IsEmpty() )
 	{
 		AfxMessageBox(_T("Where are subnet files?"));
 		return;
 	}
-	pFolder = UNICODEtoASCII( &subnetsDbFolder );
-	GetCore()->subnetsFolder = pFolder;
-	free( pFolder );
+	GetCore()->subnetsFolder = subnetsDbFolder;
 
 
 	if ( logsFolder.IsEmpty() )
@@ -170,9 +166,7 @@ void CNeuroLogDlg::OnBnClickedButtonStart()
 		AfxMessageBox(_T("Where are log files?"));
 		return;
 	}
-	pFolder = UNICODEtoASCII( &logsFolder );
-	GetCore()->logsFolder = pFolder;
-	free( pFolder );
+	GetCore()->logsFolder = logsFolder;
 
 
 	if ( logsMask.IsEmpty() )
@@ -180,9 +174,7 @@ void CNeuroLogDlg::OnBnClickedButtonStart()
 		AfxMessageBox( _T( "Where is logs mask?" ) );
 		return;
 	}
-	pFolder = UNICODEtoASCII( &logsMask );
-	GetCore()->logsMask = pFolder;
-	free( pFolder );
+	GetCore()->logsMask = logsMask;
 
 
 	if ( outputFolder.IsEmpty() )
@@ -190,9 +182,7 @@ void CNeuroLogDlg::OnBnClickedButtonStart()
 		AfxMessageBox(_T("We need an output folder."));
 		return;
 	}
-	pFolder = UNICODEtoASCII( &outputFolder );
-	GetCore()->outputFolder = pFolder;
-	free( pFolder );
+	GetCore()->outputFolder = outputFolder;
 
 
 	GetCore()->hitsLimit = hitsLimit;
@@ -213,19 +203,6 @@ void CNeuroLogDlg::OnBnClickedButtonStart()
 	GetCore()->ClearData();
 	*/
 	wait.Restore();
-}
-
-LPSTR CNeuroLogDlg::UNICODEtoASCII( CString* pUnicodeSrt )
-{
-	LPSTR pNewASCII = NULL;
-	int newSize = WideCharToMultiByte( CP_ACP, NULL, LPCWSTR( *pUnicodeSrt ), pUnicodeSrt->GetLength(), NULL, NULL, NULL, NULL );
-	if ( newSize > 0 )
-	{
-		pNewASCII = LPSTR( malloc( newSize + 1 ) );
-		memset( pNewASCII, 0, newSize + 1 );
-		newSize = WideCharToMultiByte( CP_ACP, NULL, LPCWSTR( *pUnicodeSrt ), pUnicodeSrt->GetLength(), pNewASCII, newSize, NULL, NULL );
-	}
-	return pNewASCII;
 }
 
 BOOL CNeuroLogDlg::PickTheFolder( CWnd* mfcWnd, CString* pcsFolder )

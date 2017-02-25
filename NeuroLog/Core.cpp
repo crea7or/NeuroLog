@@ -10,8 +10,8 @@
 #include <sstream>
 #include <string>
 
-#define SUBNETS_CACHE_FILENAME "\\NeuroLog.Subnets"
-#define SUBNETS_REPORT_FILENAME "\\NeuroLog.Statistics.html"
+#define SUBNETS_CACHE_FILENAME L"\\NeuroLog.Subnets"
+#define SUBNETS_REPORT_FILENAME L"\\NeuroLog.Statistics.html"
 
 #define HTML_START "<html><head><style type=\"text/css\">body,table{font-family:Tahoma,Sans-serif;font-size:10pt;text-align:left}</style><script>function elm(e){$el=e.target.parentNode.querySelector('div.el');if($el.style.display=='none'){$el.style.display='block'}else{$el.style.display='none'};}</script></head><body>"
 #define HTML_START_DATA "<table cellspacing=\"3\" cellpadding=\"5\" width=\"50%\" style=\"float: left;\"><tr bgcolor=\"Moccasin\"><td>Subnet IP(first)</td><td>Country</td><td>Hits</td><td>Traffic</td></tr>"
@@ -102,7 +102,7 @@ void Core::AnalyzeSubnets()
 	}
 	// Get time interval of analyzed log files
 
-	std::string reportFileName = outputFolder + SUBNETS_REPORT_FILENAME;
+	std::wstring reportFileName = outputFolder + SUBNETS_REPORT_FILENAME;
 	std::ofstream outputStream;
 	outputStream.open( reportFileName, std::ios::binary );
 	if ( outputStream.is_open() )
@@ -111,7 +111,7 @@ void Core::AnalyzeSubnets()
 
 		// Write time interval
 		outputStream << "<p>Interval analyzed: " << startDt.GetDateTime() << "  to  " << endDt.GetDateTime() << "</p>";
-		outputStream << "<p>Log files folder: " << logsFolder << "\\" << logsMask << "</p>";
+		outputStream << "<p>Log files folder: " << std::string( logsFolder.begin(), logsFolder.end() ) << "\\" << std::string( logsMask.begin(), logsMask.end() ) << "</p>";
 		// Write time interval
 
 		// First table header
@@ -222,7 +222,7 @@ void Core::AnalyzeSubnets()
 
 		outputStream.close();
 
-		ShellExecuteA( nullptr, "open", reportFileName.c_str(), nullptr, nullptr, SW_NORMAL );
+		ShellExecute( nullptr, L"open", reportFileName.c_str(), nullptr, nullptr, SW_NORMAL );
 	}
 
 	// Performance test
@@ -238,7 +238,7 @@ bool Core::LoadLogs()
 	bool result = false;
 
 	totalHitsSession = 0;
-	std::vector< std::string > fileNames;
+	std::vector< std::wstring > fileNames;
 	GetFilesByMask( &fileNames, logsFolder, logsMask );
 
 	try
@@ -305,7 +305,7 @@ bool Core::LoadLogs()
 	return result;
 }
 
-bool Core::ParseLogFile( std::string logFileName )
+bool Core::ParseLogFile( std::wstring logFileName )
 {
 	bool result = true;
 
@@ -313,19 +313,10 @@ bool Core::ParseLogFile( std::string logFileName )
 	pbyte wokringBuffer;
 	Hit hit;
 
-	std::vector< std::string > filePath;
-	std::istringstream f( logFileName );
-	std::string s;
-	while ( std::getline( f, s, '\\' ) )
-	{
-		filePath.push_back( s );
-	}
-	if ( filePath.size() == 0 )
-	{
-		filePath.push_back( s );
-	}
-	s = *filePath.rbegin();
-	std::wstring message = L"Log file: " + std::wstring( s.begin(), s.end());
+	std::size_t found = logFileName.find_last_of( L"/\\" );
+	std::wstring message = L"Log file: " + logFileName.substr( found + 1 );
+
+	uint32 lines = 0, badLines = 0;
 
 	try
 	{
@@ -346,7 +337,7 @@ bool Core::ParseLogFile( std::string logFileName )
 				// 1.2.3.4 - - [11/Feb/2017:00:00:07 -0400] "GET /omm/ HTTP/1.1" 200 7520 "https://www.google.co.nz/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36" "3.41"
 
 				wokringBuffer = byteBuffer;
-				uint32 lines = 0, badLines = 0;
+
 				size_t processedBytes;
 				for ( size_t cnt = 0; cnt < fileSize; ++cnt )
 				{
@@ -365,7 +356,6 @@ bool Core::ParseLogFile( std::string logFileName )
 					cnt += processedBytes;
 				}
 
-				message += L" hits: " + std::to_wstring( lines ) + L" skipped: " + std::to_wstring( badLines );
 			}
 		}
 	}
@@ -378,6 +368,8 @@ bool Core::ParseLogFile( std::string logFileName )
 	{
 		free( byteBuffer );
 	}
+
+	message += L"  [ hits: " + std::to_wstring( lines ) + L" ] [ skipped: " + std::to_wstring( badLines ) + L" ]";
 
 	appLog.Add( message );
 
@@ -406,7 +398,7 @@ bool Core::LoadSubnets()
 		timer.Start();
 		// Performance test
 
-		std::string subnetsCacheFileName = subnetsFolder + SUBNETS_CACHE_FILENAME;
+		std::wstring subnetsCacheFileName = subnetsFolder + SUBNETS_CACHE_FILENAME;
 		std::vector<RawSubnet> rawSubnets;
 		if ( LoadSubnetsCache( &rawSubnets ) == false )
 		{
@@ -478,7 +470,7 @@ bool Core::LoadSubnets()
 bool Core::LoadSubnetsCache( std::vector<RawSubnet>* pRawSubnets )
 {
 	bool result = false;
-	std::string cacheFile = outputFolder + SUBNETS_CACHE_FILENAME;
+	std::wstring cacheFile = outputFolder + SUBNETS_CACHE_FILENAME;
 	pbyte byteBuffer = nullptr;
 	uint32 version;
 	LPRAWSUBNET pRawSubnet;
@@ -488,7 +480,7 @@ bool Core::LoadSubnetsCache( std::vector<RawSubnet>* pRawSubnets )
 	inputStream.open( cacheFile, std::ios::binary | std::ios::ate );
 	if ( inputStream.is_open())
 	{
-		appLog.Add( std::wstring( L"Prebuild subnets database is used" ) );
+		appLog.Add( L"Prebuild subnets database is used" );
 
 		fileSize = ( size_t )inputStream.tellg();
 		inputStream.seekg( 0 );
@@ -523,8 +515,8 @@ bool Core::LoadSubnetsCache( std::vector<RawSubnet>* pRawSubnets )
 
 bool Core::BuildSubnets( std::vector<RawSubnet>* pRawSubnets )
 {
-	std::vector< std::string > fileNames;
-	GetFilesByMask( &fileNames, subnetsFolder, "*.txt" );
+	std::vector< std::wstring > fileNames;
+	GetFilesByMask( &fileNames, subnetsFolder, L"*.txt" );
 
 	appLog.Add( L"Subnets db files found: " + std::to_wstring( fileNames.size()));
 
@@ -541,7 +533,7 @@ bool Core::BuildSubnets( std::vector<RawSubnet>* pRawSubnets )
 	// Save DB to cache
 	uint32 version = 0;
 
-	std::string cacheFile = outputFolder + SUBNETS_CACHE_FILENAME;
+	std::wstring cacheFile = outputFolder + SUBNETS_CACHE_FILENAME;
 	std::ofstream outputStream;
 	outputStream.open( cacheFile, std::ios::binary );
 	if ( outputStream.is_open())
@@ -557,7 +549,7 @@ bool Core::BuildSubnets( std::vector<RawSubnet>* pRawSubnets )
 	return true;
 }
 
-bool Core::ParseSubnetsFile( std::vector<RawSubnet>* pRawSubnets, std::string subnetsFilePath )
+bool Core::ParseSubnetsFile( std::vector<RawSubnet>* pRawSubnets, std::wstring subnetsFilePath )
 {
 	RawSubnet subnet;
 	IN_ADDR ipAddr;
@@ -691,20 +683,20 @@ bool Core::ParseSubnetsFile( std::vector<RawSubnet>* pRawSubnets, std::string su
 
 #pragma region System
 
-size_t Core::GetFilesByMask( std::vector< std::string >* fileNames, std::string folder, std::string mask )
+size_t Core::GetFilesByMask( std::vector< std::wstring >* fileNames, std::wstring folder, std::wstring mask )
 {
-	WIN32_FIND_DATAA stFindFileData;
+	WIN32_FIND_DATA stFindFileData;
 	HANDLE hHandle;
-	std::string folderToPopulate = folder + "\\";
-	std::string folderWithMask = folderToPopulate + mask;
-	hHandle = FindFirstFileA( folderWithMask.c_str(), &stFindFileData );
+	std::wstring folderToPopulate = folder + L"\\";
+	std::wstring folderWithMask = folderToPopulate + mask;
+	hHandle = FindFirstFile( folderWithMask.c_str(), &stFindFileData );
 	while ( hHandle != INVALID_HANDLE_VALUE )
 	{
 		if ( ( stFindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) == 0 )
 		{
 			fileNames->push_back( folderToPopulate + stFindFileData.cFileName );
 		}
-		if ( !FindNextFileA( hHandle, &stFindFileData ) )
+		if ( !FindNextFile( hHandle, &stFindFileData ) )
 		{
 			break;
 		}

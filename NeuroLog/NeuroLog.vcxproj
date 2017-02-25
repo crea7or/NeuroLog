@@ -191,7 +191,6 @@
     <ClInclude Include="RawSubnet.h" />
     <ClInclude Include="Registry.h" />
     <ClInclude Include="Core.h" />
-    <ClInclude Include="HighPrefTimer.h" />
     <ClInclude Include="Hit.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="NeuroLog.h" />
@@ -207,7 +206,6 @@
     <ClCompile Include="ChronoTimer.cpp" />
     <ClCompile Include="Registry.cpp" />
     <ClCompile Include="Core.cpp" />
-    <ClCompile Include="HighPrefTimer.cpp" />
     <ClCompile Include="Hit.cpp" />
     <ClCompile Include="NeuroLog.cpp" />
     <ClCompile Include="NeuroLogDlg.cpp" />

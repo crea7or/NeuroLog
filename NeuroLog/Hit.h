@@ -4,8 +4,6 @@
 
 #include "BitDateTime.h"
 
-#pragma pack (1)
-
 class Hit
 {
 public:

@@ -2,9 +2,6 @@
 
 #pragma once
 
-
-
-#pragma pack(1)
 struct RawSubnet
 {
 	uint32 startAddr = { 0 };

@@ -27,7 +27,6 @@ protected:
 protected:
 	HICON m_hIcon;
 
-	LPSTR UNICODEtoASCII( CString* pUnicodeSrt );
 	BOOL PickTheFolder( CWnd* lp_mfcWnd, CString *lp_csFolder );
 	void SaveToRegsitry();
 

@@ -2,14 +2,14 @@
 
 #pragma once
 
-#include "Subnet.h"
-#include "AppLog.h"
 #include <vector>
-#include <array>
 #include <unordered_map>
 #include <algorithm>
+
+#include "Subnet.h"
 #include "RawSubnet.h"
 #include "SubnetHit.h"
+#include "AppLog.h"
 
 class Core
 {
@@ -23,10 +23,10 @@ public:
 	void AnalyzeSubnets();
 	void ClearData();
 
-	std::string subnetsFolder;
-	std::string outputFolder;
-	std::string logsFolder;
-	std::string logsMask;
+	std::wstring subnetsFolder;
+	std::wstring outputFolder;
+	std::wstring logsFolder;
+	std::wstring logsMask;
 
 	uint32 sizeLimit; //  Do not include subnets into report when they generated less traffic that this value
 	uint32 hitsLimit; //  Do not include subnets into report when they generated less hits that this value
@@ -57,13 +57,13 @@ private:
 
 	bool LoadSubnetsCache( std::vector<RawSubnet>* pRawSubnets );
 	bool BuildSubnets( std::vector<RawSubnet>* pRawSubnets );
-	bool ParseSubnetsFile( std::vector<RawSubnet>* pRawSubnets, std::string fileName );
+	bool ParseSubnetsFile( std::vector<RawSubnet>* pRawSubnets, std::wstring fileName );
 
 	#pragma endregion
 
 	#pragma region System
 
-	size_t GetFilesByMask( std::vector< std::string >* fileNames, std::string folder, std::string mask );
+	size_t GetFilesByMask( std::vector< std::wstring >* fileNames, std::wstring folder, std::wstring mask );
 	std::string MakeBytesSizeString( uint64 value );
 	std::string Ipv4ToString( uint32 ipv4 );
 	byte SetCIDR( uint32 ips );
@@ -71,7 +71,7 @@ private:
 
 	#pragma region Logs
 
-	bool ParseLogFile( std::string fileName );
+	bool ParseLogFile( std::wstring fileName );
 
 	#pragma endregion
 

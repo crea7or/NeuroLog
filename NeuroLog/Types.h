@@ -1,3 +1,5 @@
+// Copyright (c) CEZEO software Ltd. http://www.cezeo.com
+
 #pragma once
 
 typedef unsigned char byte;

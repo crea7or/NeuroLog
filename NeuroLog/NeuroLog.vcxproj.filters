@@ -32,9 +32,6 @@
     <ClInclude Include="NeuroLogDlg.h">
       <Filter>Gui Classes</Filter>
     </ClInclude>
-    <ClInclude Include="HighPrefTimer.h">
-      <Filter>System Logic Classes</Filter>
-    </ClInclude>
     <ClInclude Include="AppLog.h">
       <Filter>App Logic Classes</Filter>
     </ClInclude>
@@ -59,17 +56,14 @@
     <ClInclude Include="SubnetHit.h">
       <Filter>App Logic Classes</Filter>
     </ClInclude>
-    <ClInclude Include="Types.h">
-      <Filter>Gui Classes</Filter>
-    </ClInclude>
     <ClInclude Include="ChronoTimer.h">
+      <Filter>System Logic Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="Types.h">
       <Filter>System Logic Classes</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="HighPrefTimer.cpp">
-      <Filter>System Logic Classes</Filter>
-    </ClCompile>
     <ClCompile Include="Core.cpp">
       <Filter>App Logic Classes</Filter>
     </ClCompile>
