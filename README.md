@@ -2,12 +2,19 @@
  NeuroLog is a web log analyzer that summarize requests from the same network subnets to detect robots activity
 
 1) Databases with current network subnets (netblocks) should be downloaded before first use.
+
 The exact links for each of the datasets are as follows:
+
 ftp.arin.net/pub/stats/arin/delegated-arin-extended-latest
+
 ftp.ripe.net/ripe/stats/delegated-ripencc-latest
+
 ftp.afrinic.net/pub/stats/afrinic/delegated-afrinic-latest
+
 ftp.apnic.net/pub/stats/apnic/delegated-apnic-latest
+
 ftp.lacnic.net/pub/stats/lacnic/delegated-lacnic-latest
+
 (rename them to *.txt if they not)
 
 or use "IP address to country" database from https://db-ip.com/db/
