@@ -14,12 +14,12 @@ void NewCore()
 {
 	pCore = new Core;
 	pFakeListBox = new CListBox();
-	pCore->appLog.listBoxCtrl = pFakeListBox;
+	pCore->appLog.SetListCtrl( pFakeListBox );
 }
 
 void DeleteCore()
 {
-	pCore->appLog.listBoxCtrl = nullptr;
+	pCore->appLog.SetListCtrl( nullptr );
 	delete pFakeListBox;
 	delete pCore;
 }

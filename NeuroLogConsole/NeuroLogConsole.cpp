@@ -20,7 +20,7 @@ void PrintParamsHelp()
 
 int _tmain( int argc, _TCHAR* argv[] )
 {
-	std::wcout << L"NeuroLog 1.0 by CEZEO software Ltd. http://www.cezeo.com" << std::endl;
+	std::wcout << L"NeuroLog 1.1 by CEZEO software Ltd. http://www.cezeo.com" << std::endl;
 
 	NewCore();
 

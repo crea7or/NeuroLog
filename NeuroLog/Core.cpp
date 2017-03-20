@@ -9,6 +9,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <thread>
 
 #define SUBNETS_CACHE_FILENAME L"\\NeuroLog.Subnets"
 #define SUBNETS_REPORT_FILENAME L"\\NeuroLog.Statistics.html"
@@ -43,20 +44,15 @@ Core::~Core()
 	}
 }
 
-
-
 void Core::ClearData()
 {
-	std::vector<Subnet>::iterator itSub;
-	for ( itSub = subnetsVector.begin(); itSub < subnetsVector.end(); itSub++ )
-	{
-		itSub->Clear();
-	}
-
+	std::for_each( subnetsVector.begin(), subnetsVector.end(), []( Subnet& sub ) { sub.Clear(); } );
 	hitsVector.clear();
 	uriMap.clear();
 	refMap.clear();
-
+	logFilesLock.lock();
+	fileNames.clear();
+	logFilesLock.unlock();
 	//agentsMap.clear();
 }
 
@@ -81,6 +77,8 @@ void Core::AnalyzeSubnets()
 	//////////////////////
 	// Generate reports //
 	///////////////////////
+
+#ifdef DO_REPORT
 
 	SubnetsSortHitsCount sortObjCnt;
 	std::sort( subnetsPtrs.begin(), subnetsPtrs.end(), sortObjCnt );
@@ -225,6 +223,8 @@ void Core::AnalyzeSubnets()
 		ShellExecute( nullptr, L"open", reportFileName.c_str(), nullptr, nullptr, SW_NORMAL );
 	}
 
+#endif
+
 	// Performance test
 	timer.Stop();
 	appLog.Add( L"Report generation time: " + timer.GetElapsedMilliseconds() );
@@ -233,31 +233,55 @@ void Core::AnalyzeSubnets()
 
 #pragma region Logs
 
+std::wstring Core::PopLogFile()
+{
+	std::wstring result;
+	logFilesLock.lock();
+	if ( fileNames.size() > 0 )
+	{
+		result = fileNames.back();
+		fileNames.pop_back();
+	}
+	logFilesLock.unlock();
+	return result;
+}
+
 bool Core::LoadLogs()
 {
 	bool result = false;
 
 	totalHitsSession = 0;
-	std::vector< std::wstring > fileNames;
 	GetFilesByMask( &fileNames, logsFolder, logsMask );
+	totalLogFiles = fileNames.size();
 
 	try
 	{
 		// Performance test
 		ChronoTimer timer;
 		timer.Start();
-		appLog.Add( L"Log files found: " + std::to_wstring( fileNames.size()));
+		appLog.Add( L"Log files found: " + std::to_wstring( totalLogFiles ) + L" their size: " + MakeBytesSizeWString( totalLogFilesSize ) );
 		// Performance test
 
-		for ( size_t index = 0; index < fileNames.size(); index++ )
+		std::vector<std::thread> threads_pool;
+		size_t threads = fileNames.size() > POOL_THREADS ? POOL_THREADS : fileNames.size();
+		while ( threads > 0 )
 		{
-			ParseLogFile( fileNames[ index ] );
+			threads_pool.push_back( std::thread( Core::Parser ) );
+			--threads;
 		}
+
+		std::for_each( threads_pool.begin(), threads_pool.end(), []( std::thread& thrd ) { thrd.join(); } );
 
 		// Performance test
 		timer.Stop();
-		appLog.Add( L"Logs parsing time: " + timer.GetElapsedMilliseconds() );
+		appLog.Add( L"All logs parsing time: " + timer.GetElapsedMilliseconds() );
 		appLog.Add( L"Total hits: " + std::to_wstring( hitsVector.size()));
+		uint64 time = timer.GetElapsedMillisecondsRaw().count();
+		if ( time == 0 )
+		{
+			++time;
+		}
+		appLog.Add( L"Log parsing speed: " + std::to_wstring( hitsVector.size() / time ) + L" hits/ms" );
 		// Performance test
 
 		// Performance test
@@ -305,7 +329,53 @@ bool Core::LoadLogs()
 	return result;
 }
 
-bool Core::ParseLogFile( std::wstring logFileName )
+void Core::Parser()
+{
+	std::wstring logFile;
+#ifndef	EACH_HIT_LOCK_STRATEGY
+	std::vector< Hit > hits;
+#endif
+	size_t counter = 0;
+	do
+	{
+		logFile = GetCore()->PopLogFile();
+		if ( logFile.size() == 0 )
+		{
+			break;
+		}
+#ifdef EACH_HIT_LOCK_STRATEGY
+		GetCore()->ParseLogFile( logFile, GetCore()->hitsVector );
+#else
+		GetCore()->ParseLogFile( logFile, hits );
+		GetCore()->AppendHits( hits );
+		hits.clear();
+#endif
+	} while ( TRUE );
+}
+
+#ifndef	EACH_HIT_LOCK_STRATEGY
+void Core::AppendHits( std::vector< Hit >& hits )
+{
+	appendHitsLock.lock();
+	if ( hitsVector.capacity() < ( hitsVector.size() + hits.size() ) )
+	{
+		size_t logsCount;
+		logFilesLock.lock();
+		logsCount = fileNames.size();
+		logFilesLock.unlock();
+		if ( logsCount == 0 )
+		{
+			logsCount = 1;
+		}
+		hitsVector.reserve( hitsVector.size() + ( hits.size() * logsCount ));
+	}
+	hitsVector.insert( hitsVector.end(), std::make_move_iterator( hits.begin() ), std::make_move_iterator( hits.end()));
+
+	appendHitsLock.unlock();
+}
+#endif
+
+bool Core::ParseLogFile( std::wstring logFileName, std::vector< Hit >& hits )
 {
 	bool result = true;
 
@@ -346,7 +416,13 @@ bool Core::ParseLogFile( std::wstring logFileName )
 
 					if ( hit.ipv4 != 0 ) // ip is ok - everything is good
 					{
-						hitsVector.push_back( hit );
+#ifdef EACH_HIT_LOCK_STRATEGY
+						appendHitsLock.lock();
+#endif
+						hits.push_back( hit );
+#ifdef EACH_HIT_LOCK_STRATEGY
+						appendHitsLock.unlock();
+#endif
 						++lines;
 					}
 					else
@@ -398,7 +474,6 @@ bool Core::LoadSubnets()
 		timer.Start();
 		// Performance test
 
-		std::wstring subnetsCacheFileName = subnetsFolder + SUBNETS_CACHE_FILENAME;
 		std::vector<RawSubnet> rawSubnets;
 		if ( LoadSubnetsCache( &rawSubnets ) == false )
 		{
@@ -830,6 +905,7 @@ bool Core::ParseSubnetsCsvFile( std::vector<RawSubnet>* pRawSubnets, std::wstrin
 
 size_t Core::GetFilesByMask( std::vector< std::wstring >* fileNames, std::wstring folder, std::wstring mask )
 {
+	totalLogFilesSize = 0;
 	WIN32_FIND_DATA stFindFileData;
 	HANDLE hHandle;
 	std::wstring folderToPopulate = folder + L"\\";
@@ -840,6 +916,7 @@ size_t Core::GetFilesByMask( std::vector< std::wstring >* fileNames, std::wstrin
 		if ( ( stFindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) == 0 )
 		{
 			fileNames->push_back( folderToPopulate + stFindFileData.cFileName );
+			totalLogFilesSize += stFindFileData.nFileSizeLow; // We can't process files larger than 1gb
 		}
 		if ( !FindNextFile( hHandle, &stFindFileData ) )
 		{
@@ -848,6 +925,45 @@ size_t Core::GetFilesByMask( std::vector< std::wstring >* fileNames, std::wstrin
 	}
 	FindClose( hHandle );
 	return fileNames->size();
+}
+
+std::wstring Core::MakeBytesSizeWString( uint64 originalValue )
+{
+	double dp = ( double )originalValue;
+	std::wstring type;
+	if ( dp > 999999999999999 )
+	{
+		dp /= 1125899906842624;
+		type = L" Pb";
+	}
+	else if ( dp > 999999999999 )
+	{
+		dp /= 1099511627776;
+		type = L" Tb";
+	}
+	else if ( dp > 999999999 )
+	{
+		dp /= 1073741824;
+		type = L" Gb";
+	}
+	else if ( dp > 1048576 /*999999*/ )
+	{
+		dp /= 1048576;
+		type = L" Mb";
+	}
+	else if ( dp > 1024 /*999*/ )
+	{
+		dp /= 1024;
+		type = L" Kb";
+	}
+	else
+	{
+		type = L" b";
+	}
+	wchar_t buffer[ 32 ];
+	// _CRT_SECURE_NO_WARNINGS required with std::sprintf
+	swprintf_s( buffer, 32, L"%.2f%s", dp, type.c_str() );
+	return std::wstring( buffer );
 }
 
 std::string Core::MakeBytesSizeString( uint64 originalValue )

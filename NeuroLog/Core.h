@@ -5,11 +5,16 @@
 #include <vector>
 #include <unordered_map>
 #include <algorithm>
+#include <mutex>
 
 #include "Subnet.h"
 #include "RawSubnet.h"
 #include "SubnetHit.h"
 #include "AppLog.h"
+
+#define POOL_THREADS 4
+#define DO_REPORT // comment to turn off report generatiron for performance tests
+#define EACH_HIT_LOCK_STRATEGY // faster
 
 class Core
 {
@@ -34,22 +39,26 @@ public:
 	// Logging object
 	AppLog appLog;
 
-	// Array of subnets
-	std::vector< Subnet > subnetsVector;
-
-	// Array of Hits files
-	std::vector< Hit > hitsVector;
-
 	// Map of Request URIs
 	std::unordered_map< std::string, uint32 > uriMap;
+	std::mutex uriMapLock;
 
 	// Map of Referrers
 	std::unordered_map< std::string, uint32 > refMap;
+	std::mutex refMapLock;
 
 	// Map of User Agents
 	//std::unordered_map< std::string, uint32 > agentsMap;
 
+	static void Parser();
+	std::wstring PopLogFile();
+#ifndef	EACH_HIT_LOCK_STRATEGY
+	void AppendHits( std::vector< Hit >& hits );
+#endif
+
 	size_t totalHitsSession;
+	size_t totalLogFiles;
+	size_t totalLogFilesSize;
 
 private:
 
@@ -60,21 +69,35 @@ private:
 	bool ParseSubnetsFile( std::vector<RawSubnet>* pRawSubnets, std::wstring subnetsFilePath );
 	bool ParseSubnetsCsvFile( std::vector<RawSubnet>* pRawSubnets, std::wstring subnetsFilePath );
 
+	// Array of subnets
+	std::vector< Subnet > subnetsVector;
+
 	#pragma endregion
 
 	#pragma region System
 
 	size_t GetFilesByMask( std::vector< std::wstring >* fileNames, std::wstring folder, std::wstring mask );
 	std::string MakeBytesSizeString( uint64 value );
+	std::wstring MakeBytesSizeWString( uint64 originalValue );
 	std::string Ipv4ToString( uint32 ipv4 );
 	byte SetCIDR( uint32 ips );
+
 	#pragma endregion
 
 	#pragma region Logs
 
-	bool ParseLogFile( std::wstring fileName );
+	bool ParseLogFile( std::wstring fileName, std::vector< Hit >& hits );
+
+	// Array of Hits
+	std::vector< Hit > hitsVector;
+
+	// Log files
+	std::vector< std::wstring > fileNames;
+	std::mutex logFilesLock;
 
 	#pragma endregion
+
+	std::mutex appendHitsLock;
 
 	LPSUBNETHIT ipMap[65536]{}; // using two octets of IP address to find subnet block faster
 

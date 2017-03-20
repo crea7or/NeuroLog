@@ -6,6 +6,7 @@
 AppLog::AppLog()
 {
 	listBoxCtrl = NULL;
+
 }
 
 AppLog::~AppLog()
@@ -14,10 +15,11 @@ AppLog::~AppLog()
 
 void AppLog::Add( std::wstring message )
 {
-	//TRACE( message.c_str() );
 	if (listBoxCtrl != NULL)
 	{
+		accessLock.lock();
 		listBoxCtrl->SetCurSel( listBoxCtrl->AddString( message.c_str()));
+		accessLock.unlock();
 	}
 }
 

@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <mutex>
+
 class AppLog
 {
 public:
@@ -9,7 +11,14 @@ public:
 	~AppLog();
 
 	void Add( std::wstring message );
+	void SetListCtrl( CListBox* listCtrl )
+	{
+		listBoxCtrl = listCtrl;
+	}
 
+private:
+
+	std::mutex accessLock;
 	CListBox* listBoxCtrl;
 };
 

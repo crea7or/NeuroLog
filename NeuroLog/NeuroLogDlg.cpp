@@ -59,7 +59,7 @@ BOOL CNeuroLogDlg::OnInitDialog()
 	CDialog::OnInitDialog();
 
 	// Set ListBox as Log destination
-	GetCore()->appLog.listBoxCtrl = &logListBoxCtrl;
+	GetCore()->appLog.SetListCtrl( &logListBoxCtrl );
 
 	SetIcon(m_hIcon, TRUE);			// Set big icon
 	SetIcon(m_hIcon, FALSE);		// Set small icon
@@ -107,7 +107,7 @@ void CNeuroLogDlg::OnBnClickedOk()
 
 void CNeuroLogDlg::OnBnClickedCancel()
 {
-	GetCore()->appLog.listBoxCtrl = NULL;
+	GetCore()->appLog.SetListCtrl( NULL );
 	SaveToRegsitry();
 	// Stop using ListBox as log destination
 	CDialog::OnCancel();
