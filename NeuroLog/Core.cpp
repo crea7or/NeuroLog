@@ -254,6 +254,12 @@ bool Core::LoadLogs()
 	GetFilesByMask( &fileNames, logsFolder, logsMask );
 	totalLogFiles = fileNames.size();
 
+	size_t sizePredict = totalLogFilesSize / 200;
+	if ( hitsVector.capacity() < sizePredict )
+	{
+		hitsVector.reserve( sizePredict );
+	}
+
 	try
 	{
 		// Performance test
@@ -427,6 +433,94 @@ bool Core::ParseLogFile( std::wstring logFileName, std::vector< Hit >& hits )
 					}
 					else
 					{
+						++badLines;
+					}
+					cnt += processedBytes;
+				}
+
+			}
+		}
+	}
+	catch ( ... )
+	{
+		result = false;
+	}
+
+	if ( byteBuffer != nullptr )
+	{
+		free( byteBuffer );
+	}
+
+	message += L"  [ hits: " + std::to_wstring( lines ) + L" ] [ skipped: " + std::to_wstring( badLines ) + L" ]";
+
+	appLog.Add( message );
+
+	return result;
+}
+
+
+bool Core::ParseLogFileEmplace( std::wstring logFileName, std::vector< Hit >& hits )
+{
+	bool result = true;
+
+	pbyte byteBuffer = nullptr;
+	pbyte wokringBuffer;
+	Hit* pHit;
+
+	std::size_t found = logFileName.find_last_of( L"/\\" );
+	std::wstring message = L"Log file: " + logFileName.substr( found + 1 );
+
+	uint32 lines = 0, badLines = 0;
+
+	try
+	{
+		size_t fileSize;
+		std::ifstream inputStream;
+		inputStream.open( logFileName, std::ios::binary | std::ios::ate );
+		if ( inputStream.is_open() )
+		{
+			fileSize = ( size_t )inputStream.tellg();
+			inputStream.seekg( 0 );
+			if ( fileSize > 0 && fileSize < 1024 * 1024 * 1024 ) // 1gb is enough for everyone (c)
+			{
+				// File loading
+				byteBuffer = ( pbyte )malloc( fileSize );
+				inputStream.read( ( pchar )byteBuffer, fileSize );
+
+				// sample line
+				// 1.2.3.4 - - [11/Feb/2017:00:00:07 -0400] "GET /omm/ HTTP/1.1" 200 7520 "https://www.google.co.nz/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36" "3.41"
+
+				wokringBuffer = byteBuffer;
+
+
+				size_t processedBytes;
+				for ( size_t cnt = 0; cnt < fileSize; ++cnt )
+				{
+#ifdef EACH_HIT_LOCK_STRATEGY
+					appendHitsLock.lock();
+#endif
+					hits.emplace_back();
+#ifdef EACH_HIT_LOCK_STRATEGY
+					appendHitsLock.unlock();
+#endif
+					pHit = &hits.back();
+
+					wokringBuffer = byteBuffer + cnt;
+					processedBytes = pHit->ParseLine( wokringBuffer, fileSize - cnt );
+
+					if ( pHit->ipv4 != 0 ) // ip is ok - everything is good
+					{
+						++lines;
+					}
+					else
+					{
+#ifdef EACH_HIT_LOCK_STRATEGY
+						appendHitsLock.lock();
+#endif
+						hits.pop_back();
+#ifdef EACH_HIT_LOCK_STRATEGY
+						appendHitsLock.unlock();
+#endif
 						++badLines;
 					}
 					cnt += processedBytes;
@@ -929,41 +1023,8 @@ size_t Core::GetFilesByMask( std::vector< std::wstring >* fileNames, std::wstrin
 
 std::wstring Core::MakeBytesSizeWString( uint64 originalValue )
 {
-	double dp = ( double )originalValue;
-	std::wstring type;
-	if ( dp > 999999999999999 )
-	{
-		dp /= 1125899906842624;
-		type = L" Pb";
-	}
-	else if ( dp > 999999999999 )
-	{
-		dp /= 1099511627776;
-		type = L" Tb";
-	}
-	else if ( dp > 999999999 )
-	{
-		dp /= 1073741824;
-		type = L" Gb";
-	}
-	else if ( dp > 1048576 /*999999*/ )
-	{
-		dp /= 1048576;
-		type = L" Mb";
-	}
-	else if ( dp > 1024 /*999*/ )
-	{
-		dp /= 1024;
-		type = L" Kb";
-	}
-	else
-	{
-		type = L" b";
-	}
-	wchar_t buffer[ 32 ];
-	// _CRT_SECURE_NO_WARNINGS required with std::sprintf
-	swprintf_s( buffer, 32, L"%.2f%s", dp, type.c_str() );
-	return std::wstring( buffer );
+	std::string res = MakeBytesSizeString( originalValue );
+	return std::wstring( res.begin(), res.end());
 }
 
 std::string Core::MakeBytesSizeString( uint64 originalValue )

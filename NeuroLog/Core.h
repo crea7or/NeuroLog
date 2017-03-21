@@ -14,7 +14,7 @@
 
 #define POOL_THREADS 4
 #define DO_REPORT // comment to turn off report generatiron for performance tests
-#define EACH_HIT_LOCK_STRATEGY // faster
+//#define EACH_HIT_LOCK_STRATEGY // faster on small files and 10x times slower on big files (100+mb)
 
 class Core
 {
@@ -87,6 +87,7 @@ private:
 	#pragma region Logs
 
 	bool ParseLogFile( std::wstring fileName, std::vector< Hit >& hits );
+	bool ParseLogFileEmplace( std::wstring fileName, std::vector< Hit >& hits );
 
 	// Array of Hits
 	std::vector< Hit > hitsVector;
