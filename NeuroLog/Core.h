@@ -15,7 +15,7 @@
 #define POOL_THREADS 4
 #define DO_REPORT // comment to turn off report generatiron for performance tests
 //#define EACH_HIT_LOCK_STRATEGY // faster on small files and slower on big files
-#define CRITICAL_SECTION_AS_MUTEX // many times faster than std::mutex
+#define CRITICAL_SECTION_AS_MUTEX // faster than std::mutex
 
 class Core
 {
@@ -37,22 +37,9 @@ public:
 	uint32 sizeLimit; //  Do not include subnets into report when they generated less traffic that this value
 	uint32 hitsLimit; //  Do not include subnets into report when they generated less hits that this value
 
-	// Logging object
-	AppLog appLog;
-
-	// Map of Request URIs
-	std::unordered_map< std::string, uint32 > uriMap;
-	std::mutex uriMapLock;
-
-	// Map of Referrers
-	std::unordered_map< std::string, uint32 > refMap;
-	std::mutex refMapLock;
-
-	// Map of User Agents
-	//std::unordered_map< std::string, uint32 > agentsMap;
-
 	static void Parser();
 	std::wstring PopLogFile();
+
 #ifndef	EACH_HIT_LOCK_STRATEGY
 	void AppendHits( std::vector< Hit >& hits );
 #endif
@@ -61,7 +48,51 @@ public:
 	size_t totalLogFiles;
 	size_t totalLogFilesSize;
 
+	AppLog& GetLog()
+	{
+		return appLog;
+	}
+
+	std::unordered_map< std::string, uint32 >& GetUriMap()
+	{
+		return uriMap;
+	}
+
+	void LockUriMap();
+	void UnlockUriMap();
+
+	std::unordered_map< std::string, uint32 >& GetRefMap()
+	{
+		return refMap;
+	}
+
+	void LockRefMap();
+	void UnlockRefMap();
+
 private:
+
+	// Logging object
+	AppLog appLog;
+
+	// Map of Request URIs
+	std::unordered_map< std::string, uint32 > uriMap;
+#ifdef CRITICAL_SECTION_AS_MUTEX
+	CRITICAL_SECTION uriMapCs;
+#else
+	std::mutex uriMapLock;
+#endif
+
+	// Map of Referrers
+	std::unordered_map< std::string, uint32 > refMap;
+
+#ifdef CRITICAL_SECTION_AS_MUTEX
+	CRITICAL_SECTION refMapCs;
+#else
+	std::mutex refMapLock;
+#endif
+
+	// Map of User Agents
+	//std::unordered_map< std::string, uint32 > agentsMap;
 
 	#pragma region Subnets
 
@@ -99,12 +130,12 @@ private:
 
 	#pragma endregion
 
-	std::mutex appendHitsLock;
-
 	LPSUBNETHIT ipMap[65536]{}; // using two octets of IP address to find subnet block faster
 
 #ifdef CRITICAL_SECTION_AS_MUTEX
-	CRITICAL_SECTION cs;
+	CRITICAL_SECTION hitsCs;
+#else
+	std::mutex hitsLock;
 #endif
 
 };

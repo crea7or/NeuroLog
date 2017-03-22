@@ -59,7 +59,7 @@ BOOL CNeuroLogDlg::OnInitDialog()
 	CDialog::OnInitDialog();
 
 	// Set ListBox as Log destination
-	GetCore()->appLog.SetListCtrl( &logListBoxCtrl );
+	GetCore()->GetLog().SetListCtrl( &logListBoxCtrl );
 
 	SetIcon(m_hIcon, TRUE);			// Set big icon
 	SetIcon(m_hIcon, FALSE);		// Set small icon
@@ -107,7 +107,7 @@ void CNeuroLogDlg::OnBnClickedOk()
 
 void CNeuroLogDlg::OnBnClickedCancel()
 {
-	GetCore()->appLog.SetListCtrl( NULL );
+	GetCore()->GetLog().SetListCtrl( NULL );
 	SaveToRegsitry();
 	// Stop using ListBox as log destination
 	CDialog::OnCancel();
@@ -129,7 +129,7 @@ DWORD WINAPI Launch( LPVOID lpParam )
 {
 	CNeuroLogDlg* dlg = ( CNeuroLogDlg* )lpParam;
 
-	GetCore()->appLog.Add( L" " );
+	GetCore()->GetLog().Add( L" " );
 
 	ChronoTimer timer;
 	timer.Start();
@@ -142,7 +142,7 @@ DWORD WINAPI Launch( LPVOID lpParam )
 	timer.Stop();
 	if ( timer.GetElapsedMillisecondsRaw().count() > 0 && GetCore()->totalHitsSession > 0 )
 	{
-		GetCore()->appLog.Add( L"Total speed: " + std::to_wstring( GetCore()->totalHitsSession / timer.GetElapsedMillisecondsRaw().count() ) + L" hits/ms" );
+		GetCore()->GetLog().Add( L"Total speed: " + std::to_wstring( GetCore()->totalHitsSession / timer.GetElapsedMillisecondsRaw().count() ) + L" hits/ms" );
 	}
 	dlg->UnlockDlg( TRUE );
 

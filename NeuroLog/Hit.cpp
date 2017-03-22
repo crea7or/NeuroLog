@@ -127,20 +127,20 @@ size_t Hit::ParseLine( pbyte byteBuffer, size_t remainBytes )
 					byteBuffer[ cnt ] = 0x00;
 #ifndef DO_NOT_COLLECT_REQUEST_URI
 					std::string uri( ( pchar )workingBuffer );
-					GetCore()->uriMapLock.lock();
-					std::unordered_map< std::string, uint32 >::const_iterator got = GetCore()->uriMap.find( uri );
-					if ( got == GetCore()->uriMap.end() )
+					GetCore()->LockUriMap();
+					std::unordered_map< std::string, uint32 >::const_iterator got = GetCore()->GetUriMap().find( uri );
+					if ( got == GetCore()->GetUriMap().end() )
 					{
 						// add new URI
-						requestUriIndex = uint32( GetCore()->uriMap.size());
+						requestUriIndex = uint32( GetCore()->GetUriMap().size() );
 						std::pair< std::string, uint32 > np( uri, requestUriIndex );
-						GetCore()->uriMap.insert( np );
+						GetCore()->GetUriMap().insert( np );
 					}
 					else
 					{
 						requestUriIndex = got->second;
 					}
-					GetCore()->uriMapLock.unlock();
+					GetCore()->UnlockUriMap();
 #endif
 					valueType = 5; // return code,  stopbyte = 0x20 - before return code
 				}
@@ -200,20 +200,20 @@ size_t Hit::ParseLine( pbyte byteBuffer, size_t remainBytes )
 					byteBuffer[ cnt ] = 0x00;
 #ifndef DO_NOT_COLLECT_REFFERER
 					std::string ref( ( pchar )workingBuffer );
-					GetCore()->refMapLock.lock();
-					std::unordered_map< std::string, uint32 >::const_iterator got = GetCore()->refMap.find( ref );
-					if ( got == GetCore()->refMap.end() )
+					GetCore()->LockRefMap();
+					std::unordered_map< std::string, uint32 >::const_iterator got = GetCore()->GetRefMap().find( ref );
+					if ( got == GetCore()->GetRefMap().end() )
 					{
 						// add new URI
-						referrerIndex = uint32( GetCore()->refMap.size());
+						referrerIndex = uint32( GetCore()->GetRefMap().size() );
 						std::pair< std::string, uint32 > np( ref, referrerIndex );
-						GetCore()->refMap.insert( np );
+						GetCore()->GetRefMap().insert( np );
 					}
 					else
 					{
 						referrerIndex = got->second;
 					}
-					GetCore()->refMapLock.unlock();
+					GetCore()->UnlockRefMap();
 #endif
 					// Everything good
 					stopByte = 0xFE; // skip to end of line

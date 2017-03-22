@@ -32,16 +32,19 @@ uint32 addresToCIDR[ 32 ] = { 2147483648, 1073741824, 536870912, 268435456, 1342
 Core::Core()
 {
 #ifdef CRITICAL_SECTION_AS_MUTEX
-	InitializeCriticalSection( &cs );
+	InitializeCriticalSection( &hitsCs );
+	InitializeCriticalSection( &uriMapCs );
+	InitializeCriticalSection( &refMapCs );
 #endif CRITICAL_SECTION_AS_MUTEX
 }
 
 Core::~Core()
 {
 #ifdef CRITICAL_SECTION_AS_MUTEX
-	DeleteCriticalSection( &cs );
+	DeleteCriticalSection( &hitsCs );
+	DeleteCriticalSection( &uriMapCs );
+	DeleteCriticalSection( &refMapCs );
 #endif
-
 	for ( size_t index = 0; index < 65536; index++ )
 	{
 		if ( ipMap[ index ] != nullptr )
@@ -234,7 +237,7 @@ void Core::AnalyzeSubnets()
 
 	// Performance test
 	timer.Stop();
-	appLog.Add( L"Report generation time: " + timer.GetElapsedMilliseconds() );
+	GetLog().Add( L"Report generation time: " + timer.GetElapsedMilliseconds() );
 	// Performance test
 }
 
@@ -272,7 +275,7 @@ bool Core::LoadLogs()
 		// Performance test
 		ChronoTimer timer;
 		timer.Start();
-		appLog.Add( L"Log files found: " + std::to_wstring( totalLogFiles ) + L" their size: " + MakeBytesSizeWString( totalLogFilesSize ) );
+		GetLog().Add( L"Log files found: " + std::to_wstring( totalLogFiles ) + L" their size: " + MakeBytesSizeWString( totalLogFilesSize ) );
 		// Performance test
 
 		std::vector<std::thread> threads_pool;
@@ -287,14 +290,14 @@ bool Core::LoadLogs()
 
 		// Performance test
 		timer.Stop();
-		appLog.Add( L"All logs parsing time: " + timer.GetElapsedMilliseconds() );
-		appLog.Add( L"Total hits: " + std::to_wstring( hitsVector.size()));
+		GetLog().Add( L"All logs parsing time: " + timer.GetElapsedMilliseconds() );
+		GetLog().Add( L"Total hits: " + std::to_wstring( hitsVector.size()));
 		uint64 time = timer.GetElapsedMillisecondsRaw().count();
 		if ( time == 0 )
 		{
 			++time;
 		}
-		appLog.Add( L"Log parsing speed: " + std::to_wstring( hitsVector.size() / time ) + L" hits/ms" );
+		GetLog().Add( L"Log parsing speed: " + std::to_wstring( hitsVector.size() / time ) + L" hits/ms" );
 		// Performance test
 
 		// Performance test
@@ -329,7 +332,7 @@ bool Core::LoadLogs()
 
 		// Performance test
 		timer.Stop();
-		appLog.Add( L"Hits -> subnets parsing time: " + timer.GetElapsedMilliseconds());
+		GetLog().Add( L"Hits -> subnets parsing time: " + timer.GetElapsedMilliseconds());
 		// Performance test
 	}
 	catch ( ... )
@@ -370,7 +373,7 @@ void Core::Parser()
 void Core::AppendHits( std::vector< Hit >& hits )
 {
 #ifdef CRITICAL_SECTION_AS_MUTEX
-	EnterCriticalSection( &cs );
+	EnterCriticalSection( &hitsCs );
 #else
 	appendHitsLock.lock();
 #endif
@@ -388,7 +391,7 @@ void Core::AppendHits( std::vector< Hit >& hits )
 	}
 	hitsVector.insert( hitsVector.end(), hits.begin(), hits.end());
 #ifdef CRITICAL_SECTION_AS_MUTEX
-	LeaveCriticalSection( &cs );
+	LeaveCriticalSection( &hitsCs );
 #else
 	appendHitsLock.unlock();
 #endif
@@ -439,7 +442,7 @@ bool Core::ParseLogFile( std::wstring logFileName, std::vector< Hit >& hits )
 
 #ifdef EACH_HIT_LOCK_STRATEGY
 #ifdef CRITICAL_SECTION_AS_MUTEX
-						EnterCriticalSection( &cs );
+						EnterCriticalSection( &hitsCs );
 #else
 						appendHitsLock.lock();
 #endif
@@ -447,7 +450,7 @@ bool Core::ParseLogFile( std::wstring logFileName, std::vector< Hit >& hits )
 						hits.push_back( hit );
 #ifdef EACH_HIT_LOCK_STRATEGY
 #ifdef CRITICAL_SECTION_AS_MUTEX
-						LeaveCriticalSection( &cs );
+						LeaveCriticalSection( &hitsCs );
 #else
 						appendHitsLock.unlock();
 #endif
@@ -476,11 +479,10 @@ bool Core::ParseLogFile( std::wstring logFileName, std::vector< Hit >& hits )
 
 	message += L"  [ hits: " + std::to_wstring( lines ) + L" ] [ skipped: " + std::to_wstring( badLines ) + L" ]";
 
-	appLog.Add( message );
+	GetLog().Add( message );
 
 	return result;
 }
-
 
 bool Core::ParseLogFileEmplace( std::wstring logFileName, std::vector< Hit >& hits )
 {
@@ -564,9 +566,49 @@ bool Core::ParseLogFileEmplace( std::wstring logFileName, std::vector< Hit >& hi
 
 	message += L"  [ hits: " + std::to_wstring( lines ) + L" ] [ skipped: " + std::to_wstring( badLines ) + L" ]";
 
-	appLog.Add( message );
+	GetLog().Add( message );
 
 	return result;
+}
+
+#pragma endregion
+
+#pragma region Sync
+
+void Core::LockUriMap()
+{
+#ifdef CRITICAL_SECTION_AS_MUTEX
+	EnterCriticalSection( &uriMapCs );
+#else
+	uriMapLock.lock();
+#endif
+}
+
+void Core::UnlockUriMap()
+{
+#ifdef CRITICAL_SECTION_AS_MUTEX
+	LeaveCriticalSection( &uriMapCs );
+#else
+	uriMapLock.unlock();
+#endif
+}
+
+void Core::LockRefMap()
+{
+#ifdef CRITICAL_SECTION_AS_MUTEX
+	EnterCriticalSection( &refMapCs );
+#else
+	refMapLock.lock();
+#endif
+}
+
+void Core::UnlockRefMap()
+{
+#ifdef CRITICAL_SECTION_AS_MUTEX
+	LeaveCriticalSection( &refMapCs );
+#else
+	refMapLock.unlock();
+#endif
 }
 
 #pragma endregion
@@ -580,7 +622,7 @@ bool Core::LoadSubnets()
 	if ( subnetsVector.size() > 0 )
 	{
 		// Already loaded
-		appLog.Add( L"Subnets already loaded" );
+		GetLog().Add( L"Subnets already loaded" );
 		return true;
 	}
 
@@ -595,14 +637,14 @@ bool Core::LoadSubnets()
 		if ( LoadSubnetsCache( &rawSubnets ) == false )
 		{
 			// Create database from *.txt files
-			appLog.Add( L"Building subnets database from scratch" );
+			GetLog().Add( L"Building subnets database from scratch" );
 			BuildSubnets( &rawSubnets );
 		}
 
 		// Performance test
 		timer.Stop();
-		appLog.Add( L"Load/Build time total: " + timer.GetElapsedMilliseconds());
-		appLog.Add( L"Subnets found: " + std::to_wstring( rawSubnets.size()));
+		GetLog().Add( L"Load/Build time total: " + timer.GetElapsedMilliseconds());
+		GetLog().Add( L"Subnets found: " + std::to_wstring( rawSubnets.size()));
 		// Performance test
 
 		// Performance test
@@ -639,7 +681,7 @@ bool Core::LoadSubnets()
 
 		// Performance test
 		timer.Stop();
-		appLog.Add( L"Subnets in memory cache build time: " + timer.GetElapsedMilliseconds() );
+		GetLog().Add( L"Subnets in memory cache build time: " + timer.GetElapsedMilliseconds() );
 		// Performance test
 
 		if ( subnetsVector.size() != rawSubnets.size() )
@@ -672,7 +714,7 @@ bool Core::LoadSubnetsCache( std::vector<RawSubnet>* pRawSubnets )
 	inputStream.open( cacheFile, std::ios::binary | std::ios::ate );
 	if ( inputStream.is_open())
 	{
-		appLog.Add( L"Prebuild subnets database is used" );
+		GetLog().Add( L"Prebuild subnets database is used" );
 
 		fileSize = ( size_t )inputStream.tellg();
 		inputStream.seekg( 0 );
@@ -710,7 +752,7 @@ bool Core::BuildSubnets( std::vector<RawSubnet>* pRawSubnets )
 	std::vector< std::wstring > fileNames;
 	GetFilesByMask( &fileNames, subnetsFolder, L"*.txt" );
 
-	appLog.Add( L"Subnets *.txt db files found: " + std::to_wstring( fileNames.size()));
+	GetLog().Add( L"Subnets *.txt db files found: " + std::to_wstring( fileNames.size()));
 
 	for ( size_t index = 0; index < fileNames.size(); index++ )
 	{
@@ -721,7 +763,7 @@ bool Core::BuildSubnets( std::vector<RawSubnet>* pRawSubnets )
 	{
 		GetFilesByMask( &fileNames, subnetsFolder, L"*.csv" );
 
-		appLog.Add( L"Subnets *.csv db files found: " + std::to_wstring( fileNames.size() ) );
+		GetLog().Add( L"Subnets *.csv db files found: " + std::to_wstring( fileNames.size() ) );
 
 		for ( size_t index = 0; index < fileNames.size(); index++ )
 		{
@@ -731,7 +773,7 @@ bool Core::BuildSubnets( std::vector<RawSubnet>* pRawSubnets )
 
 	if ( fileNames.size() == 0 )
 	{
-		appLog.Add( L"Subnets files are not found, please, download");
+		GetLog().Add( L"Subnets files are not found, please, download");
 	}
 
 	RawSubnetsSort sortObj;
@@ -867,7 +909,7 @@ bool Core::ParseSubnetsFile( std::vector<RawSubnet>* pRawSubnets, std::wstring s
 
 				// Performance test
 				timer.Stop();
-				appLog.Add( L"Subnets build time: " + std::to_wstring( subnets ) + L" per " + timer.GetElapsedMilliseconds());
+				GetLog().Add( L"Subnets build time: " + std::to_wstring( subnets ) + L" per " + timer.GetElapsedMilliseconds());
 				// Performance test
 			}
 			else
@@ -879,7 +921,7 @@ bool Core::ParseSubnetsFile( std::vector<RawSubnet>* pRawSubnets, std::wstring s
 	}
 	catch( ... )
 	{
-		appLog.Add( L"Oh, some exception..." );
+		GetLog().Add( L"Oh, some exception..." );
 	}
 
 	if ( byteBuffer != nullptr )
@@ -993,7 +1035,7 @@ bool Core::ParseSubnetsCsvFile( std::vector<RawSubnet>* pRawSubnets, std::wstrin
 
 				// Performance test
 				timer.Stop();
-				appLog.Add( L"Subnets build time: " + std::to_wstring( subnets ) + L" per " + timer.GetElapsedMilliseconds() );
+				GetLog().Add( L"Subnets build time: " + std::to_wstring( subnets ) + L" per " + timer.GetElapsedMilliseconds() );
 				// Performance test
 			}
 			else
@@ -1005,7 +1047,7 @@ bool Core::ParseSubnetsCsvFile( std::vector<RawSubnet>* pRawSubnets, std::wstrin
 	}
 	catch ( ... )
 	{
-		appLog.Add( L"Oh, some exception..." );
+		GetLog().Add( L"Oh, some exception..." );
 	}
 
 	if ( byteBuffer != nullptr )
