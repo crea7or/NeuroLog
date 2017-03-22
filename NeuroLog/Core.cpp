@@ -31,10 +31,17 @@ uint32 addresToCIDR[ 32 ] = { 2147483648, 1073741824, 536870912, 268435456, 1342
 
 Core::Core()
 {
+#ifdef CRITICAL_SECTION_AS_MUTEX
+	InitializeCriticalSection( &cs );
+#endif CRITICAL_SECTION_AS_MUTEX
 }
 
 Core::~Core()
 {
+#ifdef CRITICAL_SECTION_AS_MUTEX
+	DeleteCriticalSection( &cs );
+#endif
+
 	for ( size_t index = 0; index < 65536; index++ )
 	{
 		if ( ipMap[ index ] != nullptr )
@@ -362,7 +369,11 @@ void Core::Parser()
 #ifndef	EACH_HIT_LOCK_STRATEGY
 void Core::AppendHits( std::vector< Hit >& hits )
 {
+#ifdef CRITICAL_SECTION_AS_MUTEX
+	EnterCriticalSection( &cs );
+#else
 	appendHitsLock.lock();
+#endif
 	if ( hitsVector.capacity() < ( hitsVector.size() + hits.size() ) )
 	{
 		size_t logsCount;
@@ -375,9 +386,12 @@ void Core::AppendHits( std::vector< Hit >& hits )
 		}
 		hitsVector.reserve( hitsVector.size() + ( hits.size() * logsCount ));
 	}
-	hitsVector.insert( hitsVector.end(), std::make_move_iterator( hits.begin() ), std::make_move_iterator( hits.end()));
-
+	hitsVector.insert( hitsVector.end(), hits.begin(), hits.end());
+#ifdef CRITICAL_SECTION_AS_MUTEX
+	LeaveCriticalSection( &cs );
+#else
 	appendHitsLock.unlock();
+#endif
 }
 #endif
 
@@ -422,12 +436,21 @@ bool Core::ParseLogFile( std::wstring logFileName, std::vector< Hit >& hits )
 
 					if ( hit.ipv4 != 0 ) // ip is ok - everything is good
 					{
+
 #ifdef EACH_HIT_LOCK_STRATEGY
+#ifdef CRITICAL_SECTION_AS_MUTEX
+						EnterCriticalSection( &cs );
+#else
 						appendHitsLock.lock();
+#endif
 #endif
 						hits.push_back( hit );
 #ifdef EACH_HIT_LOCK_STRATEGY
+#ifdef CRITICAL_SECTION_AS_MUTEX
+						LeaveCriticalSection( &cs );
+#else
 						appendHitsLock.unlock();
+#endif
 #endif
 						++lines;
 					}

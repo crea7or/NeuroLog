@@ -14,7 +14,8 @@
 
 #define POOL_THREADS 4
 #define DO_REPORT // comment to turn off report generatiron for performance tests
-//#define EACH_HIT_LOCK_STRATEGY // faster on small files and 10x times slower on big files (100+mb)
+//#define EACH_HIT_LOCK_STRATEGY // faster on small files and slower on big files
+#define CRITICAL_SECTION_AS_MUTEX // many times faster than std::mutex
 
 class Core
 {
@@ -101,6 +102,10 @@ private:
 	std::mutex appendHitsLock;
 
 	LPSUBNETHIT ipMap[65536]{}; // using two octets of IP address to find subnet block faster
+
+#ifdef CRITICAL_SECTION_AS_MUTEX
+	CRITICAL_SECTION cs;
+#endif
 
 };
 typedef Core* LPCORE;
